@@ -1,0 +1,316 @@
+# IDENTIDADE VISUAL — Design System para replicar
+
+## Stack
+- React + Tailwind CSS (darkMode: 'class')
+- Sem design tokens CSS — tudo via classes Tailwind
+- Dark mode: prefixo `dark:` no mesmo elemento
+
+## Fonte
+- `font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif`
+- Carregada via CSS (não Google Fonts)
+- `-webkit-font-smoothing: antialiased`
+
+## Paleta Principal (Primary — Azul)
+50:  #eff6ff    (bg leve)
+100: #dbeafe    (bg active, chips)
+200: #bfdbfe
+300: #93c5fd    (focus ring claro)
+400: #60a5fa    (accent: checkbox, radio, range)
+500: #3b82f6
+600: #2563eb    ← COR PRIMÁRIA: botões, links, theme-color
+700: #1d4ed8    (hover, texto em bg claro)
+800: #1e40af
+900: #1e3a8a    (texto escuro no primary)
+
+## Cores Semânticas
+| Uso | Cor | Classes |
+|-----|-----|---------|
+| Sucesso/Presença | Verde | `green-50/100/500/600/700/900` |
+| Erro/Falta | Vermelho | `red-50/100/500/600/700/900` |
+| Aviso/Justificado | Amarelo | `yellow-50/100/200/900` |
+| Cancelado | Cinza | `gray-200/700` |
+| Feriado | Vermelho | `red-200/900` |
+| Ponte | Laranja | `orange-50/100/200/300/900` |
+| Reunião | Azul | `blue-50/100/200/300/900` |
+| Evento | Roxo | `purple-50/100/200/300/900` |
+| Férias | Amarelo | `yellow-100/200/900` |
+| Perigo/Banner | Vermelho | `bg-red-600` |
+| Alerta/Banner | Âmbar | `bg-amber-500` |
+
+## Dark Mode — Mapeamento Completo
+| Elemento | Light | Dark |
+|----------|-------|------|
+| Fundo página | `bg-gray-50` | `dark:bg-gray-950` |
+| TopBar/Sidebar | `bg-white` | `dark:bg-gray-900` |
+| Cards/Modais | `bg-white` | `dark:bg-gray-800` |
+| Inputs | white | `dark:bg-gray-700` |
+| Inputs disabled | `bg-gray-50` | `dark:disabled:bg-gray-800` |
+| Read-only | `bg-gray-50` | `dark:bg-gray-900` |
+| Fundo tabela header | `bg-gray-50` | `dark:bg-gray-900` |
+| Texto título | `text-gray-800` | `dark:text-gray-100` |
+| Texto corpo | `text-gray-700` | `dark:text-gray-300` |
+| Texto secundário | `text-gray-600` | `dark:text-gray-400` |
+| Texto muted | `text-gray-500` | `dark:text-gray-400` |
+| Texto très muted | `text-gray-400` | `dark:text-gray-500` |
+| Brand texto | `text-primary-600` | `dark:text-primary-400` |
+| Borders cards | `border-gray-200` | `dark:border-gray-700` |
+| Borders TopBar | `border-gray-200` | `dark:border-gray-800` |
+| Borders inputs | `border-gray-300` | `dark:border-gray-600` |
+| Shadows cards | `shadow-sm` | `dark:shadow-black/20` |
+| Shadows modais | `shadow-xl` | `dark:shadow-black/20` |
+| Overlay modal | `bg-black/40` | `dark:bg-black/60` |
+
+## Tipografia
+| Papel | Classe |
+|-------|--------|
+| Título login | `text-3xl font-bold text-gray-800 dark:text-gray-100` |
+| Brand TopBar | `text-lg font-bold text-primary-600 dark:text-primary-400` |
+| Heading página | `text-xl font-semibold text-gray-800 dark:text-gray-100` |
+| Heading seção | `text-lg font-semibold text-gray-700 dark:text-gray-300` |
+| Sub-heading | `text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide` |
+| Label tabela | `text-xs font-medium text-gray-500 dark:text-gray-400 uppercase` |
+| Label campo | `text-sm font-medium text-gray-600 dark:text-gray-400` |
+| Texto corpo | `text-sm text-gray-600 dark:text-gray-400` |
+| Texto pequeno | `text-xs text-gray-500 dark:text-gray-400` |
+| Texto tiny | `text-[10px] text-gray-400 dark:text-gray-500` |
+| Monospace | `font-mono tabular-nums` |
+
+## Botões
+
+### Primary (ação principal)
+bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors
+px-4 py-2 text-sm
+
+### Secondary (cancelar)
+border border-gray-300 dark:border-gray-600 rounded-md
+hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors
+px-4 py-2 text-sm
+
+### Danger
+bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors
+px-5 py-2 text-sm font-bold
+
+### Ghost (ícone)
+text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300
+p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors
+
+### Pill ativo/inativo
+Ativo:   px-4 py-2 text-sm rounded-lg bg-primary-600 text-white transition
+Inativo: px-4 py-2 text-sm rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200
+         dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600 transition
+
+### Botão toggle (switch)
+w-11 h-6 bg-gray-200 dark:bg-gray-600 rounded-full
+peer peer-checked:bg-primary-600 peer-focus:ring-2 peer-focus:ring-primary-300
+transition-colors after:content-'' after:absolute after:top-0.5 after:left-2px
+after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all
+peer-checked:after:translate-x-full
+
+## Inputs
+
+### Texto/Select padrão
+w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700
+rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500
+
+### Disabled
+disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-500
+dark:disabled:text-gray-400
+
+### Error
+border-red-500 animate-shake
+
+### Read-only
+px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-md text-sm
+bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300
+
+### SearchInput (com lupa)
+w-full pl-8 pr-8 py-1.5 border border-gray-300 rounded-md text-sm
+focus:outline-none focus:ring-2 focus:ring-primary-500
+dark:border-gray-600 dark:bg-gray-700
+- Lupa: `absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500`
+- X clear: `absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600`
+
+## Cards
+
+### Card padrão
+bg-white dark:bg-gray-800 rounded-xl border border-gray-200
+dark:border-gray-700 shadow-sm dark:shadow-black/20 p-6
+
+### Card com heading (ícone + título)
+flex items-center gap-3 mb-4
+Ícone: text-3xl (emoji)
+Título: text-lg font-semibold text-gray-700 dark:text-gray-300
+
+### Card Home (destaque colorido)
+flex flex-col items-center justify-center p-8 rounded-xl border-2
+shadow-sm dark:shadow-black/20 transition-all
+text-4xl mb-3 (ícone) + text-base font-medium text-gray-700 dark:text-gray-200
+Cores: bg-blue-50/border-blue-200, bg-green-50/border-green-200, bg-purple-50/border-purple-200, etc.
+
+### Card descrição
+text-sm text-gray-500 dark:text-gray-400 mb-4
+
+## Modais
+
+### Overlay
+fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60
+
+### Container
+bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-black/20
+w-full max-w-lg mx-4 max-h-90vh overflow-y-auto
+
+### Header
+px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between
+h2: text-lg font-semibold text-gray-800 dark:text-gray-100
+
+### Body
+px-6 py-4 space-y-4
+
+### Footer
+px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3
+
+## Badges / Chips
+
+### Status badge
+text-xs font-medium px-2 py-0.5 rounded-full
+Ativo:  bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300
+Inativo: bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300
+
+### Chip de ação (ativo)
+bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700
+text-blue-700 dark:text-blue-300
+px-3 py-1 text-xs font-medium rounded-full border transition-colors
+
+### Chip de ação (inativo)
+bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700
+text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700
+
+## Tabelas
+
+### Container
+overflow-x-auto bg-white rounded-lg border border-gray-200
+dark:bg-gray-800 dark:border-gray-700
+
+### Table
+min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-700
+
+### Header row
+bg-gray-50 dark:bg-gray-900
+
+### Header cell
+px-4 py-2 text-left font-medium text-gray-500 dark:text-gray-400
+text-xs font-medium uppercase tracking-wider
+
+### Body row
+hover:bg-gray-50 dark:hover:bg-gray-800
+border-b border-gray-100 dark:border-gray-800
+
+### Capacity bar
+Bar track: w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700
+Bar fill:  h-2.5 rounded-full transition-all
+  OK:    bg-green-500
+  Cheio: bg-yellow-500
+  Lotado: bg-red-500
+
+## Banners
+
+### Conexão (offline)
+w-full bg-red-600 text-white px-4 py-2 flex items-center justify-center gap-2
+sticky top-0 z-50 text-sm font-medium
+
+### Atualização disponível
+w-full bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-3
+sticky top-0 z-50
+Botão: px-3 py-1 text-xs font-semibold bg-white text-amber-600 rounded hover:bg-amber-50
+
+### Sessão expirada
+p-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-800 rounded
+text-sm font-medium text-amber-800 dark:text-amber-200
+
+## Toast
+fixed bottom-4 right-4 text-white px-4 py-2 rounded shadow-lg dark:shadow-black/20
+text-sm z-50
+Sucesso: bg-green-600 dark:bg-green-700
+Erro:    bg-red-600 dark:bg-red-700
+
+## Sidebar
+
+### Container
+bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-r dark:border-gray-800
+min-h-calc(100vh-57px) flex flex-col py-4 transition-all duration-300 ease-in-out overflow-hidden
+Expandido: w-56 (224px)
+Recolhido: w-14 (56px)
+
+### Link nav ativo
+bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium
+flex items-center gap-3 px-2 py-2 rounded-md text-sm transition-colors
+
+### Link nav inativo
+text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800
+hover:text-gray-900 dark:hover:text-gray-200
+
+### Label de seção
+text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider
+
+### Badge notificação
+bg-red-500 text-white text-10px font-bold rounded-full min-w-18px h-18px
+flex items-center justify-center
+
+## Spacing & Radius
+
+### Padding global
+- Página: `p-6`
+- Modal body: `p-6` ou `px-6 py-4`
+- Card: `p-6`
+
+### Gap padrão
+- Sidebar nav: `gap-3` (icon + texto)
+- Grid cards: `gap-4` (desktop), `gap-3` (pequeno)
+- Action buttons: `gap-2`
+- Inline: `gap-1.5` ou `gap-2`
+
+### Border radius
+| Uso | Classe |
+|-----|--------|
+| Inputs, botões, modais | `rounded-md` |
+| Cards | `rounded-xl` |
+| Home cards | `rounded-xl` |
+| Pills, badges, chips | `rounded-full` |
+| Login inputs | `rounded` |
+| Modais | `rounded-lg` |
+
+## Animações
+```css
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+.animate-shake { animation: shake 0.3s ease-in-out; }
+Transitions: transition-colors (botões), transition-all duration-300 ease-in-out (sidebar)
+Status Colors (tabelas/grid)
+Status	Light	Dark
+presente	bg-green-100 text-green-800	dark:bg-green-900/30 dark:text-green-400
+falta	bg-red-100 text-red-800	dark:bg-red-900/30 dark:text-red-400
+justificado	bg-yellow-100 text-yellow-800	dark:bg-yellow-900/30 dark:text-yellow-400
+cancelado	bg-gray-200 text-gray-600	dark:bg-gray-700 dark:text-gray-400
+feriado	bg-red-200 text-red-800	dark:bg-red-900/30 dark:text-red-400
+ponte	bg-orange-200 text-orange-800	dark:bg-orange-900/30 dark:text-orange-400
+reuniao	bg-blue-200 text-blue-800	dark:bg-blue-900/30 dark:text-blue-400
+evento	bg-purple-200 text-purple-800	dark:bg-purple-900/30 dark:text-purple-400
+ferias	bg-yellow-200 text-yellow-800	dark:bg-yellow-900/30 dark:text-yellow-400
+CSS Global (incluir no index.css)
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.dark select,
+.dark textarea {
+  background-color: #374151;
+  color: #f3f4f6;
+  border-color: #4b5563;
+}
+.dark input[type="checkbox"],
+.dark input[type="radio"],
+.dark input[type="range"] {
+  accent-color: #60a5fa;
+}
+Meta tag PWA
+<meta name="theme-color" content="#2563eb" />

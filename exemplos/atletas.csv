@@ -1,0 +1,17 @@
+nome,idade,categoria,genero,horario,professor,nivel,tempo
+Julia Barros Camargo,13,Petiz,feminino,manhã,J,Nível 2 B,
+Alice Marino Ribeiro,11,Mirim,feminino,manhã,J,Nível 2 B,34.66
+Ana Cristina Goldberger,12,Petiz,feminino,manhã,J,Nível 2 B,22.36
+Beatriz Santos Lima,14,Infantil,feminino,tarde,K,Nível 3 A,25.80
+Carla Menezes Rocha,10,Mirim,feminino,tarde,K,Nível 1 A,28.40
+Duda Ferreira Alves,8,Pré-Mirim,feminino,manhã,L,Nível 1 A,
+Eduarda Pinto Cruz,16,Juvenil,feminino,tarde,L,Nível 4 B,20.15
+Fernanda Lopes Dias,17,Júnior,feminino,tarde,M,Nível 4 B,19.90
+Gabriel Souza Pereira,13,Infantil,masculino,manhã,N,Nível 3 A,21.10
+Heitor Almeida Ramos,11,Petiz,masculino,manhã,N,Nível 2 B,23.45
+Igor Martins Silva,9,Mirim,masculino,tarde,P,Nível 1 A,26.00
+João Vitor Costa Lima,15,Juvenil,masculino,tarde,P,Nível 4 B,18.75
+Lucas Oliveira Rocha,20,Sênior,masculino,manhã,Q,Nível 5 A,17.20
+Miguel Santos Souza,10,Mirim,masculino,manhã,Q,Nível 1 A,24.90
+Noah Barbosa Alves,12,Petiz,masculino,tarde,R,Nível 2 B,
+Otávio Ribeiro Melo,14,Infantil,masculino,tarde,R,Nível 3 A,22.05
