@@ -7,7 +7,6 @@ import { Card, CardHeading } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { SearchInput } from '../components/ui/SearchInput';
 import { TabelaGenerica } from '../components/ui/TabelaGenerica';
-import { Badge } from '../components/ui/Badge';
 
 export function ListaPage() {
   const atletas = useAppStore((estado) => estado.atletas);
@@ -31,7 +30,6 @@ export function ListaPage() {
         'nome',
         'idade',
         'categoria',
-        'categoria_oficial',
         'genero',
         'horario',
         'professor',
@@ -42,7 +40,6 @@ export function ListaPage() {
       filtrados.map((a) => [
         a.nome,
         a.idade,
-        a.categoriaCalculada,
         a.categoriaOficial,
         a.genero,
         a.periodo,
@@ -85,16 +82,7 @@ export function ListaPage() {
             {
               chave: 'categoria',
               titulo: 'Categoria',
-              render: (a) => (
-                <span>
-                  {a.categoriaCalculada}
-                  {a.divergencia && (
-                    <Badge tom="amarelo">
-                      <span className="ml-1">oficial: {a.categoriaOficial}</span>
-                    </Badge>
-                  )}
-                </span>
-              ),
+              render: (a) => <span>{a.categoriaOficial}</span>,
             },
             { chave: 'genero', titulo: 'Gênero', render: (a) => a.genero },
             { chave: 'horario', titulo: 'Horário', render: (a) => a.periodo },

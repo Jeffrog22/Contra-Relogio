@@ -71,7 +71,7 @@ export const useAppStore = create<AppState>()(
               ? {
                   ...atleta,
                   tempo,
-                  medalha: calcularMedalha(tempo, atleta.categoriaCalculada, atleta.genero),
+                  medalha: calcularMedalha(tempo, atleta.categoriaOficial, atleta.genero),
                 }
               : atleta,
           ),
@@ -86,7 +86,7 @@ export const useAppStore = create<AppState>()(
                       tempo,
                       medalha: calcularMedalha(
                         tempo,
-                        item.atleta.categoriaCalculada,
+                        item.atleta.categoriaOficial,
                         item.atleta.genero,
                       ),
                     },

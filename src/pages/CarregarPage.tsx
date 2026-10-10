@@ -7,13 +7,14 @@ import { useAppStore } from '../store/useAppStore';
 import { Card, CardDescricao, CardHeading } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { TabelaGenerica } from '../components/ui/TabelaGenerica';
-import { Badge } from '../components/ui/Badge';
 import { MedalhaBadge } from '../components/ui/MedalhaBadge';
 
 export function CarregarPage() {
   const navigate = useNavigate();
   const processarAtletas = useAppStore((estado) => estado.processarAtletas);
+  const limparAtletas = useAppStore((estado) => estado.limparAtletas);
   const mostrarToast = useAppStore((estado) => estado.mostrarToast);
+  const totalCarregado = useAppStore((estado) => estado.atletas.length);
 
   const [nomeArquivo, setNomeArquivo] = useState<string | null>(null);
   const [atletas, setAtletas] = useState<Atleta[]>([]);
@@ -46,6 +47,14 @@ export function CarregarPage() {
     navigate('/lista');
   }
 
+  function limparCarregamento() {
+    limparAtletas();
+    setNomeArquivo(null);
+    setAtletas([]);
+    setErros([]);
+    mostrarToast('sucesso', 'Carregamento limpo: atletas e séries removidos.');
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
@@ -74,6 +83,14 @@ export function CarregarPage() {
               Arquivo: <b>{nomeArquivo}</b> — {atletas.length} atleta(s)
             </span>
           )}
+          <Button
+            variante="secondary"
+            onClick={limparCarregamento}
+            disabled={totalCarregado === 0}
+            className="disabled:opacity-50"
+          >
+            Limpar carregamento
+          </Button>
         </div>
 
         {erros.length > 0 && (
@@ -101,16 +118,7 @@ export function CarregarPage() {
               {
                 chave: 'categoria',
                 titulo: 'Categoria',
-                render: (a) => (
-                  <span className="font-mono tabular-nums">
-                    {a.categoriaCalculada}
-                    {a.divergencia && (
-                      <Badge tom="amarelo">
-                        <span className="ml-1">oficial: {a.categoriaOficial}</span>
-                      </Badge>
-                    )}
-                  </span>
-                ),
+                render: (a) => <span className="font-mono tabular-nums">{a.categoriaOficial}</span>,
               },
               { chave: 'genero', titulo: 'Gênero', render: (a) => a.genero },
               { chave: 'horario', titulo: 'Horário', render: (a) => a.periodo },

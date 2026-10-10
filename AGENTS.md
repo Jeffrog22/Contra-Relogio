@@ -69,7 +69,7 @@ Regras:
 
 - **Tailwind é 3.4 fixado** (não 4.x): o Design System exige `tailwind.config.js` com `darkMode: 'class'` + keyframes `shake`. Não migrar para Tailwind 4 sem refatorar o setup.
 - **Design System tem fonte da verdade**: `identidade visual Fizapp.txt`. Nenhuma cor fora da paleta `primary`/semânticas; sempre variantes `dark:`; `bg-primary-600` (nunca `bg-blue-600`) para ação primária.
-- **Categoria é independente de ano**: a idade vem no CSV (não há `ano_nascimento`); `categoriaCalculada = tabela(idade)` em `src/utils/categorias.ts`. `categoriaOficial` vem do CSV e serve só para auditoria (flag `divergencia`).
+- **Categoria do CSV governa tudo**: `categoriaOficial` (coluna `categoria`) rege medalha, balizamento, séries e telas — a regra real do festival é o **ano de nascimento**, que não vem no CSV, então a idade não decide. `categoriaCalculada` (tabela por idade em `categorias.ts`) ficou só como referência interna (não governa nada; o selo de divergência foi removido).
 - **Formato do CSV de entrada**: `nome,idade,categoria,genero,horario,professor,nivel,tempo` (tempo opcional). O PRD/prompt original mencionava `ano_nascimento` — **desatualizado**; o formato atual é o deste README.
 - **Balizamento**: séries só com 3 ou 4 atletas; sobras (1, 2 ou 5 no grupo) se redistribuem com o grupo vizinho do mesmo gênero; casos impossíveis (1, 2 ou 5 atletas isolados) geram série com `aviso` — nunca quebrar o fluxo. Raias: 4→[1,2,3,4], 3→[2,3,4], nunca 5. Algoritmo + testes em `src/utils/balizamento.ts`.
 - **Limites de medalha são estritos no OURO**: faixa "OURO < 28,00" significa que 28,00 exato já é PRATA; 30,00 ainda é PRATA (inclusivo); 30,01 é BRONZE. Mesma lógica nas demais faixas (`src/utils/medalhas.ts`).
@@ -78,7 +78,7 @@ Regras:
 - **Testes**: Vitest em ambiente `node` (testes só de `src/utils/**`, co-localizados `*.test.ts`); `npm test` deve passar com 0 falhas antes de qualquer commit.
 - **CSV tolera BOM UTF-8**: Excel/Notepad/VS Code salvam "UTF-8 with BOM" (EF BB BF) e o BOM vira `\uFEFF` no primeiro header (`\uFEFFano`), quebrando validação de coluna obrigatória. `removerBOM()` em `src/utils/csv.ts` stripa na entrada dos dois parsers e `chave()` remove `\uFEFF` residual — **não depender do PapaParse** para isso (o fix deles só veio na 5.5.4).
 - **Sinônimos de coluna CSV**: histórico aceita `atleta`→`aluno`; atletas aceita `aluno`/`atleta`→`nome` (mapas `ALIASES_*` aplicados no `transformHeader`). Arquivos reais do Excel usam `;` como delimitador (Papa auto-detecta) e podem nomear a coluna diferente do PRD — validar sempre com o arquivo real do usuário quando possível.
-- **Versão exibida no app**: `__APP_VERSION__` é injetado pelo `define` do `vite.config.ts` via `git describe --tags --abbrev=0` (tag real). O hook post-commit **não** sincroniza o `package.json` — ele é só fallback (para CI/Pages sem tags) e deve ser atualizado manualmente junto com a tag.
+- **Versão exibida no app**: `__APP_VERSION__` é injetado pelo `define` do `vite.config.ts` via `git describe --tags --abbrev=0` (tag real). O hook **`commit-msg`** (.githooks) atualiza o `package.json` em disco e o **`post-commit` garante que a versão entre no commit** com `git commit --amend` (guard `SEMVER_SELFCHECK` anti-recursão) **antes de criar a tag** — necessário porque o git grava o tree do commit a partir do índice em memória, carregado antes do `commit-msg` (o staging do hook fica de fora). Fonte única do bump: `.githooks/semver-bump.sh`. Assim o fallback do build no Cloudflare Pages (clone sem tags) fica sempre correto.
 - **Horário do CSV vira período**: coluna `horario` aceita `manhã`/`tarde` **ou horário** (`08:45`, `13.05`, `08h45`, `HH:MM:SS`) via `periodoDoHorario()` em `src/utils/periodo.ts`; **corte às 13:00** (antes → manhã, a partir → tarde, escolhido pelo usuário); `Periodo` continua sendo só `'manhã' | 'tarde'`.
 - **Categoria com subclasses**: `normalizarCategoria` aceita sufixos de turma (`Mirim II`, `Petiz A`, `Infantil Azul`) e normaliza para a categoria-base (match exato ou remoção progressiva de tokens finais, nunca substring — `Mirinho` continua inválido). A subdivisão **não é persistida**: `categoriaOficial` guarda só a base; balizamento/agrupamento usam `categoriaCalculada` (idade) — nunca a oficial.
 - **Typo perigoso já acontecido**: `obrigigatoria` vs `obrigatoria` em interpolação de template string causou `ReferenceError` silencioso só no runtime dos testes — revisar identificadores com acento/typos ao revisar diffs.
@@ -278,6 +278,48 @@ Regras:
 - `src/utils/csv.test.ts`
 - `src/pages/CarregarPage.tsx`
 - `README.md`
+- `CHANGELOG.md`
+- `AGENTS.md`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 10/10/2026 — Categoria do CSV governa + badge de versão corrigido + botão Limpar carregamento
+
+### O que foi feito
+- **Categoria**: driver trocado de `categoriaCalculada` → `categoriaOficial` em todo o app — `csv.ts` (medalha no parse), `balizamento.ts` (agrupamento + título da série), `store` (recálculo de medalha no Controle) e telas (`CarregarPage`, `ListaPage`, `BalizamentoPage`, `ControlePage`). Motivo: a regra real é o **ano de nascimento**, que não vem no CSV — a idade não decide
+- **Selo de divergência removido**: campo `divergencia` saiu de `types.ts` e do parse; badge amarela removida das telas; export de `/lista` virou coluna `categoria` única (a oficial, sem `categoria_oficial`)
+- **Badge de versão travado em 0.3.2**: causa raiz = Cloudflare Pages sem tags git → fallback `package.json` congelado. Solução: `.githooks/semver-bump.sh` (fonte única do bump SemVer, testado: fix→patch, feat→minor, `!:`/BREAKING CHANGE→major) + hook `commit-msg` que atualiza `package.json` no disco + **`post-commit` com auto-reparo** — descoberta em campo: o `git add` do `commit-msg` **não entra no commit** (o git grava o tree a partir do índice em memória, carregado antes do hook; comprovado no commit `fcd6ba5`, que saiu com 0.5.1 e as mudanças staged). O `post-commit` agora detecta `HEAD:package.json` ≠ tag e faz `git commit --amend --no-edit --no-verify` com guard `SEMVER_SELFCHECK` **antes** de tagar. `package.json` realinhado `0.3.2`→`0.5.1`→`0.6.0`
+- **Botão "Limpar carregamento"** no CarregarPage: chama `limparAtletas()` (limpa atletas + séries), limpa também o preview local, desabilitado sem atletas carregados, com toast; histórico da Análise intocado
+- Fix colateral: `CardHeading` de "Pré-visualização" estava sem a prop obrigatória `icone` (erro de tipo latente) — corrigido com `icone="👁️"`
+- Testes: fixtures/asserções de `csv.test.ts` e `balizamento.test.ts` atualizadas (oficial como driver) — **55 testes, 0 falhas**; `tsc -b` 0 erros; `npm run build` OK; simulação dos hooks com bash confirmou os 4 bumps
+
+### Decisões
+- `categoriaCalculada` continua calculada (1 linha, já persistida no localStorage — sem migração), mas **não governa nada**
+- Bump SemVer extraído para `.githooks/semver-bump.sh` — commit-msg e post-commit compartilham a mesma lógica (determinística: mesmas entradas → mesma tag)
+- Stage dentro de `commit-msg` é ilusório nesse git: quem fecha a versão do commit é o `post-commit` (amend antes da tag); testar sempre um commit `fix:` vazio antes de confiar em mudanças de hook
+- PRD 5.4 ("concatenar pela idade") atualizado para a nova regra
+
+### Arquivos
+- `src/types.ts`
+- `src/utils/csv.ts`
+- `src/utils/balizamento.ts`
+- `src/store/useAppStore.ts`
+- `src/pages/CarregarPage.tsx`
+- `src/pages/ListaPage.tsx`
+- `src/pages/BalizamentoPage.tsx`
+- `src/pages/ControlePage.tsx`
+- `src/utils/csv.test.ts`
+- `src/utils/balizamento.test.ts`
+- `.githooks/semver-bump.sh` (novo)
+- `.githooks/commit-msg` (novo)
+- `.githooks/post-commit`
+- `package.json`
+- `README.md`
+- `PRD.md`
 - `CHANGELOG.md`
 - `AGENTS.md`
 

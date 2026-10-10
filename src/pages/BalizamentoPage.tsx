@@ -110,7 +110,7 @@ export function BalizamentoPage() {
               {
                 chave: 'categoria',
                 titulo: 'Categoria',
-                render: (linha) => linha.item.atleta.categoriaCalculada,
+                render: (linha) => linha.item.atleta.categoriaOficial,
               },
               { chave: 'nivel', titulo: 'Nível', render: (linha) => linha.item.atleta.nivel },
             ]}

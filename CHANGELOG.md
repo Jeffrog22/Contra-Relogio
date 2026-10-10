@@ -10,11 +10,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Indicador discreto da versão no TopBar (logo após o nome do app): texto cinza `text-[10px]` sem fundo (`v{versão}`); versão injetada em build via `define` do Vite a partir da tag Git (`git describe`, fallback `package.json`)
 - `periodoDoHorario()` (`src/utils/periodo.ts`): converte a coluna `horario` em período — aceita `manhã`/`tarde` **ou horário** (`08:45`, `13.05`, `08h45`); corte às 13:00 (antes → manhã, a partir → tarde); instrução na tela de upload atualizada
 - Subclasses/turmas de categoria no CSV (`Mirim II`, `Pré-Mirim II`, `Petiz A`) são normalizadas para a categoria-base em `normalizarCategoria` (match exato ou por remoção de tokens finais; `Master` continua inválido)
+- Botão **"Limpar carregamento"** no CarregarPage: limpa atletas e séries do app (histórico da Análise fica intocado)
 
 ### Changed
-- (mudanças em funcionalidades existentes)
+- **Categoria do CSV passou a governar tudo**: medalha, balizamento, séries e telas usam a `categoriaOficial` (a regra real é o ano de nascimento, que não vem no CSV — a idade não decide). `categoriaCalculada` fica só como referência interna; exportação de `/lista` agora tem coluna `categoria` única (a oficial); selo de divergência removido
 
 ### Fixed
+- Badge da versão travado em `0.3.2` no deploy: a sincronização `package.json`↔tag virou ciclo fechado — `.githooks/semver-bump.sh` (fonte única do bump, usada por `commit-msg` e `post-commit`) + **`post-commit` com auto-reparo**: como o git grava o tree a partir do índice em memória, o staging do `commit-msg` ficava fora do commit; o `post-commit` detecta a divergência e faz `git commit --amend` (com guard anti-recursão) **antes** de criar a tag. O fallback do build no Cloudflare Pages (clone sem tags) fica sempre correto
 - Upload de CSV com BOM UTF-8 (EF BB BF) não falha mais na validação de colunas obrigatórias (`parseCSVAtletas` e `parseCSVHistorico` removem o BOM antes do parsing; `chave()` ignora `\uFEFF` residual)
 - Sinônimos de coluna: histórico aceita `atleta` no lugar de `aluno`; atletas aceita `aluno`/`atleta` no lugar de `nome` (cabeçalho repetido com sinônimo também é ignorado); mensagem de coluna ausente agora lista os sinônimos aceitos. Validado com `ResultadoHistoricoGeral.csv` real (BOM + `;` + `atleta`): 97 eventos, 0 erros
 

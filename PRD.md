@@ -108,7 +108,9 @@ Replicar **fielmente** o Design System "Fizapp":
 - Aceitar separador decimal `.` ou `,`
 
 ### 5.4 Categorias
-- CONCATENAR categorias de acordo com a idade das tabelas
+- A categoria válida é a **informada no CSV** (`categoria`): ela rege medalha, balizamento e telas
+- Motivo: a categoria oficial é definida pelo **ano de nascimento**, que não consta no arquivo — a idade sozinha erra nas fronteiras do ano
+- Subclasses/turmas (`Mirim II`, `Petiz A`) são normalizadas para a categoria-base
 
 ### 5.5 Balizamento
 - Filtro de período: **manhã** / **tarde** / **geral**
@@ -128,14 +130,14 @@ Replicar **fielmente** o Design System "Fizapp":
 ### RF01 — Tela de Carregamento de CSV (`/carregar`)
 - Upload de CSV com colunas: `nome, ano_nascimento, genero, horario, professor, nivel, tempo`
 - Preview em tabela (mesmo estilo do Design System)
-- Validações: campos obrigatórios; `genero ∈ {feminino, masculino}`; `horario ∈ {manhã, tarde}`
+- Validações: campos obrigatórios; `genero ∈ {feminino, masculino}`; `horario ∈ {manhã, tarde}` ou horário (`08:45` — corte 13h)
 - Feedback via **Toast** (sucesso verde / erro vermelho)
 - Botão "Processar" (Primary) persiste em Zustand + `localStorage`
 - Ignorar linhas vazias ou cabeçalho repetido
 
 ### RF02 — Listagem Geral (`/lista`)
 - Card com heading (ícone 🏊 + título)
-- Tabela com **categoria 2026 recalculada**
+- Tabela com **categoria oficial do CSV**
 - Colunas: `nome | idade | categoria 2026 | gênero | horário | professor | nível`
 - **SearchInput** com lupa para busca por nome
 - Botão "Exportar CSV" (Secondary)

@@ -153,8 +153,7 @@ export function parseCSVAtletas(texto: string): ResultadoCSV {
       professor: (linha.professor ?? '').trim(),
       nivel: (linha.nivel ?? '').trim(),
       tempo,
-      medalha: calcularMedalha(tempo, categoriaCalculada, genero),
-      divergencia: categoriaOficial !== categoriaCalculada,
+      medalha: calcularMedalha(tempo, categoriaOficial, genero),
     });
   });
 

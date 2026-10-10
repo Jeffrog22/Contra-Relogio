@@ -1,54 +1,43 @@
 #!/bin/sh
-# SemVer auto-tag on every commit (Conventional Commits)
-#   BREAKING CHANGE or !:  → MAJOR  (vX.0.0)
-#   feat:                  → MINOR  (v0.X.0)
-#   fix:, refactor:, etc   → PATCH  (v0.0.X)
+# post-commit: sincroniza package.json no commit e cria a tag SemVer.
+# Lógica de bump centralizada em semver-bump.sh (mesma fonte do commit-msg).
+#
+# O staging feito no commit-msg NÃO entra no commit: o git grava o tree a partir
+# do índice em memória, carregado antes de rodar o hook. Aqui garantimos com um
+# amend — que dispara post-commit de novo, por isso o guard SEMVER_SELFCHECK.
 
-LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-VERSION=${LAST_TAG#v}
+[ -n "$SEMVER_SELFCHECK" ] && exit 0
 
-MAJOR=$(echo "$VERSION" | cut -d. -f1)
-MINOR=$(echo "$VERSION" | cut -d. -f2)
-PATCH=$(echo "$VERSION" | cut -d. -f3)
-PATCH=$(echo "$PATCH" | sed 's/[^0-9].*//')
-MAJOR=${MAJOR:-0}
-MINOR=${MINOR:-0}
-PATCH=${PATCH:-0}
+SUBJECT=$(git log -1 --format="%s")
+BODY=$(git log -1 --format="%b")
 
-COMMIT_MSG=$(git log -1 --format="%s")
-COMMIT_BODY=$(git log -1 --format="%b")
+NEW_TAG=$(sh "$(dirname "$0")/semver-bump.sh" "$SUBJECT" "$BODY")
+VERSION=${NEW_TAG#v}
 
-BUMP="patch"
-if echo "$COMMIT_MSG" | grep -qi "BREAKING CHANGE" || \
-   echo "$COMMIT_BODY" | grep -qi "BREAKING CHANGE" || \
-   echo "$COMMIT_MSG" | grep -q "!:"; then
-  BUMP="major"
-elif echo "$COMMIT_MSG" | grep -qi "^feat:"; then
-  BUMP="minor"
+HEAD_VER=$(git show HEAD:package.json 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version" 2>/dev/null || echo "")
+
+if [ "$HEAD_VER" != "$VERSION" ]; then
+  DISK_VER=$(node -p "require('./package.json').version" 2>/dev/null || echo "")
+  if [ "$DISK_VER" != "$VERSION" ]; then
+    node -e "
+const fs = require('fs');
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+pkg.version = '$VERSION';
+fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+lock.version = '$VERSION';
+if (lock.packages && lock.packages['']) lock.packages[''].version = '$VERSION';
+fs.writeFileSync('package-lock.json', JSON.stringify(lock, null, 2) + '\n');
+"
+  fi
+  git add package.json package-lock.json
+  export SEMVER_SELFCHECK=1
+  if git commit --amend --no-edit --no-verify; then
+    echo "post-commit: package.json=$VERSION sincronizado no commit via amend"
+  else
+    echo "post-commit: WARN - package.json=$VERSION nao entrou no commit (amend falhou)" >&2
+  fi
 fi
 
-case "$BUMP" in
-  major)
-    MAJOR=$((MAJOR + 1))
-    MINOR=0
-    PATCH=0
-    ;;
-  minor)
-    MINOR=$((MINOR + 1))
-    PATCH=0
-    ;;
-  *)
-    PATCH=$((PATCH + 1))
-    ;;
-esac
-
-while true; do
-  NEW_TAG="v$MAJOR.$MINOR.$PATCH"
-  if ! git rev-parse "$NEW_TAG" >/dev/null 2>&1; then
-    break
-  fi
-  PATCH=$((PATCH + 1))
-done
-
 git tag "$NEW_TAG"
-echo "post-commit: created tag $NEW_TAG (previous: $LAST_TAG, bump: $BUMP)"
+echo "post-commit: created tag $NEW_TAG"

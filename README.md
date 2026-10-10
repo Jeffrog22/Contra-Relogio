@@ -1,4 +1,4 @@
-# Festival Interno PPt
+# Festival Interno
 
 App de gestão do **Festival Interno de Natação Contra o Relógio (25 m)**: cadastro de atletas via CSV, balizamento automático, cálculo de medalhas por tabela de índices, controle de resultados e análise comparativa entre edições.
 
@@ -65,9 +65,9 @@ Alice Marino Ribeiro,11,Mirim,feminino,manhã,J,Nível 2 B,34.66
 |---|---|---|
 | `nome` | ✅ | Nome completo do atleta |
 | `idade` | ✅ | Idade do atleta na edição (1–99) |
-| `categoria` | ✅ | Categoria oficial informada (comparada com a calculada) |
+| `categoria` | ✅ | **Fonte da verdade** — governa medalha, balizamento e telas (a regra real é o ano de nascimento, que não vem no CSV) |
 | `genero` | ✅ | `feminino` ou `masculino` (aceita acentos/caixa) |
-| `horario` | ✅ | `manhã` ou `tarde` |
+| `horario` | ✅ | `manhã`, `tarde` ou horário (`08:45` — corte às 13h) |
 | `professor` | ✅ | Iniciais ou nome do professor |
 | `nivel` | ✅ | Ex.: `Nível 2 B` — usado no agrupamento das séries |
 | `tempo` | ❌ | Segundos com 2 casas (`34.66`, `34,66` ou `34'66`); vazio = Sem Tempo |
@@ -85,13 +85,13 @@ ano,aluno,tempo,medalha,categoria,genero
 ### Saída (exportação em `/lista`)
 
 ```csv
-nome,idade,categoria,categoria_oficial,genero,horario,professor,nivel,tempo,medalha
-Alice Marino Ribeiro,11,Petiz,Mirim,feminino,manhã,J,Nível 2 B,34.66,BRONZE
+nome,idade,categoria,genero,horario,professor,nivel,tempo,medalha
+Alice Marino Ribeiro,11,Mirim,feminino,manhã,J,Nível 2 B,34.66,BRONZE
 ```
 
 ## Regras de Negócio (resumo)
 
-- **Categoria** é calculada diretamente da idade (tabela em `src/utils/categorias.ts`), independente do ano — o mesmo app serve qualquer edição. Se a categoria oficial do CSV divergir da calculada, a listagem exibe um selo de divergência. Subclasses/turmas no CSV (`Mirim II`, `Petiz A`) são normalizadas para a categoria-base.
+- **Categoria vem do CSV** (coluna `categoria`): é ela que governa medalha, balizamento e telas — a regra real do festival é o **ano de nascimento**, que não consta no arquivo, então a idade não pode decidir. Subclasses/turmas no CSV (`Mirim II`, `Petiz A`) são normalizadas para a categoria-base. A tabela por idade (`src/utils/categorias.ts`) continua disponível apenas como referência/cálculo auxiliar.
 - **Medalha** (`src/utils/medalhas.ts`): compara o tempo com a faixa da categoria **+ gênero**. Tempo vazio, `0` ou não numérico → `Sem Tempo`. Ex.: faixa OURO `< 28,00` significa que `28,00` exato já é PRATA.
 - **Balizamento** (`src/utils/balizamento.ts`): feminino primeiro, depois masculino; agrupamento por `categoria + nível`; séries com **apenas 3 ou 4 atletas** (nunca 1 ou 2). Sobras de um grupo se redistribuem com o grupo vizinho do mesmo gênero (ex.: 5+3 → 4+4; 6 → 3+3; 9 → 3+3+3). Raias: série de 4 → `1,2,3,4`; série de 3 → `2,3,4`; **nunca raia 5**. Casos impossíveis (grupo isolado com 1, 2 ou 5 atletas) geram série com selo de aviso.
 - **Impressão**: TopBar/Sidebar/botões são ocultos via `@media print`.
@@ -184,7 +184,7 @@ A documentação oficial do projeto segue o kit replicável na raiz:
 
 - **Botão de impressão não mostra nada** — verifique se `Sidebar`/`TopBar` estão com classe `no-print` e a área de impressão com `print-area` (CSS em `src/index.css`).
 - **Dados sumiram** — tudo fica em `localStorage` (`festival-storage` + `festival-tema`); limpar dados do navegador apaga o estado.
-- **CSV rejeitado** — confira o cabeçalho exato (`nome,idade,categoria,genero,horario,professor,nivel,tempo`), o gênero (`feminino|masculino`) e o horário (`manhã|tarde`). Erros linha a linha aparecem no preview.
+- **CSV rejeitado** — confira o cabeçalho exato (`nome,idade,categoria,genero,horario,professor,nivel,tempo`), o gênero (`feminino|masculino`) e o horário (`manhã|tarde|HH:MM`). Erros linha a linha aparecem no preview.
 
 ## Licença
 

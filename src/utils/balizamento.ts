@@ -41,14 +41,14 @@ export function melhorSplit(n: number): { blocos: number[]; sobra: number } {
 function agrupar(atletas: Atleta[]): Grupo[] {
   const mapa = new Map<string, Grupo>();
   for (const atleta of atletas) {
-    const chave = `${atleta.categoriaCalculada}|${atleta.nivel}`;
+    const chave = `${atleta.categoriaOficial}|${atleta.nivel}`;
     const grupo = mapa.get(chave);
     if (grupo) {
       grupo.atletas.push(atleta);
     } else {
       mapa.set(chave, {
         chave,
-        categoria: atleta.categoriaCalculada,
+        categoria: atleta.categoriaOficial,
         nivel: atleta.nivel,
         atletas: [atleta],
       });
@@ -162,7 +162,7 @@ export function balizar(atletas: Atleta[], periodo: PeriodoOpcao): Serie[] {
       resultado.push({
         numero: numero++,
         genero,
-        categoria: bloco.atletas[0].categoriaCalculada,
+        categoria: bloco.atletas[0].categoriaOficial,
         nivel: bloco.atletas[0].nivel,
         atletas: bloco.atletas.map((atleta, i) => ({ atleta, raia: raias[i] })),
         aviso,

@@ -56,7 +56,7 @@ export function ControlePage() {
       nome: item.atleta.nome,
       tempo: item.atleta.tempo,
       medalha: item.atleta.medalha,
-      categoria: item.atleta.categoriaCalculada,
+      categoria: item.atleta.categoriaOficial,
     })),
   }));
 
@@ -106,7 +106,7 @@ export function ControlePage() {
                 {
                   chave: 'categoria',
                   titulo: 'Categoria',
-                  render: (linha) => linha.atleta.categoriaCalculada,
+                  render: (linha) => linha.atleta.categoriaOficial,
                 },
                 { chave: 'nivel', titulo: 'Nível', render: (linha) => linha.atleta.nivel },
               ]}

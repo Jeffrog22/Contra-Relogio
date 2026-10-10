@@ -1,0 +1,27 @@
+#!/bin/sh
+# commit-msg: sincroniza package.json (em disco) com a versão que será tagada.
+# O `git add` abaixo às vezes NÃO entra no commit (tree gravado a partir do índice
+# em memória); o post-commit garante isso com um amend antes de tagar.
+
+[ -f "$MERGE_HEAD" ] && exit 0
+
+SUBJECT=$(head -n 1 "$1")
+BODY=$(tail -n +2 "$1")
+
+NEW_TAG=$(sh "$(dirname "$0")/semver-bump.sh" "$SUBJECT" "$BODY")
+VERSION=${NEW_TAG#v}
+
+CURRENT=$(node -p "require('./package.json').version")
+[ "$CURRENT" = "$VERSION" ] && exit 0
+
+node -e "
+const fs = require('fs');
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+pkg.version = '$VERSION';
+fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+lock.version = '$VERSION';
+if (lock.packages && lock.packages['']) lock.packages[''].version = '$VERSION';
+fs.writeFileSync('package-lock.json', JSON.stringify(lock, null, 2) + '\n');
+"
+git add package.json package-lock.json

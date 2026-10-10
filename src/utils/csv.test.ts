@@ -16,13 +16,11 @@ describe('parseCSVAtletas', () => {
     expect(atletas).toHaveLength(2);
 
     expect(atletas[0].nome).toBe('Julia Barros Camargo');
-    expect(atletas[0].categoriaCalculada).toBe('Infantil');
     expect(atletas[0].categoriaOficial).toBe('Petiz');
-    expect(atletas[0].divergencia).toBe(true);
+    expect(atletas[0].categoriaCalculada).toBe('Infantil');
     expect(atletas[0].medalha).toBe('Sem Tempo');
 
-    expect(atletas[1].categoriaCalculada).toBe('Petiz');
-    expect(atletas[1].divergencia).toBe(true);
+    expect(atletas[1].categoriaOficial).toBe('Mirim');
     expect(atletas[1].tempo).toBe(34.66);
     expect(atletas[1].medalha).toBe('BRONZE');
     expect(atletas[1].periodo).toBe('manhã');
@@ -154,8 +152,6 @@ describe('parseCSVAtletas', () => {
     expect(erros).toEqual([]);
     expect(atletas).toHaveLength(2);
     expect(atletas[0].categoriaOficial).toBe('Mirim');
-    expect(atletas[0].categoriaCalculada).toBe('Mirim');
-    expect(atletas[0].divergencia).toBe(false);
     expect(atletas[1].categoriaOficial).toBe('Petiz');
   });
 });

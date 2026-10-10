@@ -23,7 +23,6 @@ export interface Atleta {
   nivel: string;
   tempo?: number;
   medalha?: Medalha;
-  divergencia?: boolean;
 }
 
 export interface AtletaSerie {

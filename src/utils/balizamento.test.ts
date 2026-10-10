@@ -157,8 +157,8 @@ describe('balizar — ordem e filtros', () => {
 
   it('mantém categorias separadas quando não há sobra (ordem da tabela)', () => {
     const atletas = [
-      ...montar(4, { categoriaCalculada: 'Petiz' }),
-      ...montar(3, { categoriaCalculada: 'Mirim' }),
+      ...montar(4, { categoriaOficial: 'Petiz' }),
+      ...montar(3, { categoriaOficial: 'Mirim' }),
     ];
     const series = balizar(atletas, 'manhã');
     expect(tamanhos(series)).toEqual([3, 4]);
