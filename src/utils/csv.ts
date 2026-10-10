@@ -67,6 +67,20 @@ const COLUNAS_OBRIGATORIAS = [
   'nivel',
 ];
 
+const ALIASES_ATLETAS: Record<string, string> = { aluno: 'nome', atleta: 'nome' };
+const ALIASES_HISTORICO: Record<string, string> = { atleta: 'aluno' };
+
+function normalizarHeader(header: string, aliases: Record<string, string>): string {
+  const chaveHeader = chave(header);
+  return aliases[chaveHeader] ?? chaveHeader;
+}
+
+function mensagemColunaAusente(coluna: string, aliases: Record<string, string>): string {
+  const sinonimos = Object.keys(aliases).filter((alias) => aliases[alias] === coluna);
+  if (sinonimos.length === 0) return `Coluna obrigatória ausente: "${coluna}"`;
+  return `Coluna obrigatória ausente: "${coluna}" (aceitos: ${[coluna, ...sinonimos].join(', ')})`;
+}
+
 function lerTabela(texto: string): {
   dados: Record<string, string>[];
   erros: string[];
@@ -74,14 +88,14 @@ function lerTabela(texto: string): {
   const resultado = Papa.parse<Record<string, string>>(removerBOM(texto), {
     header: true,
     skipEmptyLines: 'greedy',
-    transformHeader: (h) => chave(h),
+    transformHeader: (h) => normalizarHeader(h, ALIASES_ATLETAS),
   });
 
   const erros: string[] = [];
   const campos = resultado.meta.fields ?? [];
   for (const obrigatoria of COLUNAS_OBRIGATORIAS) {
     if (!campos.includes(obrigatoria)) {
-      erros.push(`Coluna obrigatória ausente: "${obrigatoria}"`);
+      erros.push(mensagemColunaAusente(obrigatoria, ALIASES_ATLETAS));
     }
   }
   return { dados: resultado.data, erros };
@@ -97,7 +111,8 @@ export function parseCSVAtletas(texto: string): ResultadoCSV {
     const numeroLinha = indice + 2;
     const nome = (linha.nome ?? '').trim();
     const idadeTexto = (linha.idade ?? '').trim();
-    const repetido = chave(nome) === 'nome' && chave(idadeTexto) === 'idade';
+    const repetido =
+      ['nome', 'aluno', 'atleta'].includes(chave(nome)) && chave(idadeTexto) === 'idade';
 
     if (!nome && !idadeTexto) return;
     if (repetido) return;
@@ -156,7 +171,7 @@ export function parseCSVHistorico(texto: string): ResultadoHistorico {
   const resultado = Papa.parse<Record<string, string>>(removerBOM(texto), {
     header: true,
     skipEmptyLines: 'greedy',
-    transformHeader: (h) => chave(h),
+    transformHeader: (h) => normalizarHeader(h, ALIASES_HISTORICO),
   });
 
   const erros: string[] = [];
@@ -165,7 +180,7 @@ export function parseCSVHistorico(texto: string): ResultadoHistorico {
 
   for (const obrigatoria of ['ano', 'aluno', 'medalha', 'categoria']) {
     if (!campos.includes(obrigatoria)) {
-      return { eventos, erros: [`Coluna obrigatória ausente: "${obrigatoria}"`] };
+      return { eventos, erros: [mensagemColunaAusente(obrigatoria, ALIASES_HISTORICO)] };
     }
   }
 
@@ -173,7 +188,7 @@ export function parseCSVHistorico(texto: string): ResultadoHistorico {
     const numeroLinha = indice + 2;
     const aluno = (linha.aluno ?? '').trim();
     if (!aluno) return;
-    if (chave(aluno) === 'aluno') return;
+    if (['aluno', 'atleta'].includes(chave(aluno))) return;
 
     const ano = Number.parseInt((linha.ano ?? '').trim(), 10);
     if (!Number.isInteger(ano) || ano < 1900 || ano > 2200) {

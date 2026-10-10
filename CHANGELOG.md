@@ -14,6 +14,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Fixed
 - Upload de CSV com BOM UTF-8 (EF BB BF) não falha mais na validação de colunas obrigatórias (`parseCSVAtletas` e `parseCSVHistorico` removem o BOM antes do parsing; `chave()` ignora `\uFEFF` residual)
+- Sinônimos de coluna: histórico aceita `atleta` no lugar de `aluno`; atletas aceita `aluno`/`atleta` no lugar de `nome` (cabeçalho repetido com sinônimo também é ignorado); mensagem de coluna ausente agora lista os sinônimos aceitos. Validado com `ResultadoHistoricoGeral.csv` real (BOM + `;` + `atleta`): 97 eventos, 0 erros
 
 ### Removed
 - (funcionalidades removidas)

@@ -94,6 +94,30 @@ describe('parseCSVAtletas', () => {
     expect(atletas[0].nome).toBe('Ana Silva');
     expect(atletas[0].periodo).toBe('manhã');
   });
+
+  it('aceita "aluno" e "atleta" no lugar de "nome", com cabeçalho repetido', () => {
+    for (const colunaNome of ['aluno', 'atleta']) {
+      const csv = [
+        `${colunaNome},idade,categoria,genero,horario,professor,nivel,tempo`,
+        'Ana Silva,11,Petiz,feminino,manhã,J,Nível 1 A,20.10',
+        `${colunaNome},idade,categoria,genero,horario,professor,nivel,tempo`,
+        'Bruno Luz,12,Petiz,masculino,tarde,K,Nível 1 A,',
+      ].join('\n');
+
+      const { atletas, erros } = parseCSVAtletas(csv);
+      expect(erros).toEqual([]);
+      expect(atletas).toHaveLength(2);
+      expect(atletas[0].nome).toBe('Ana Silva');
+      expect(atletas[1].nome).toBe('Bruno Luz');
+    }
+  });
+
+  it('sugere sinônimos quando falta a coluna de nome', () => {
+    const { erros } = parseCSVAtletas('idade,categoria,genero,horario,professor,nivel');
+    expect(erros).toHaveLength(1);
+    expect(erros[0]).toContain('"nome"');
+    expect(erros[0]).toContain('aluno, atleta');
+  });
 });
 
 describe('parseCSVHistorico', () => {
@@ -144,5 +168,31 @@ describe('parseCSVHistorico', () => {
     expect(eventos).toHaveLength(1);
     expect(eventos[0].ano).toBe(2024);
     expect(eventos[0].medalha).toBe('PRATA');
+  });
+
+  it('aceita "atleta" no lugar de "aluno" com BOM e ponto e vírgula (arquivo real)', () => {
+    const csv = `\uFEFF${[
+      'ano;atleta;tempo;medalha;categoria',
+      '2024;Aline Barros da Silva;21.93;PRATA;Infantil',
+      '2024;Davi Gabriel Estevao;0;Sem Tempo;Petiz',
+      'ano;atleta;tempo;medalha;categoria',
+      '2025;Sarah Barbosa da Silva;18.48;OURO;Infantil',
+    ].join('\r\n')}`;
+
+    const { eventos, erros } = parseCSVHistorico(csv);
+    expect(erros).toEqual([]);
+    expect(eventos).toHaveLength(3);
+    expect(eventos[0].aluno).toBe('Aline Barros da Silva');
+    expect(eventos[0].medalha).toBe('PRATA');
+    expect(eventos[1].tempo).toBeUndefined();
+    expect(eventos[1].medalha).toBe('Sem Tempo');
+    expect(eventos[2].aluno).toBe('Sarah Barbosa da Silva');
+  });
+
+  it('sugere sinônimos quando falta a coluna aluno', () => {
+    const { erros } = parseCSVHistorico('ano,medalha,categoria\n2024,OURO,Petiz');
+    expect(erros).toHaveLength(1);
+    expect(erros[0]).toContain('"aluno"');
+    expect(erros[0]).toContain('aluno, atleta');
   });
 });

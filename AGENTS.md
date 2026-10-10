@@ -77,6 +77,7 @@ Regras:
 - **Impressão**: chrome com classe `no-print`; áreas de impressão com `print-area` (+ wrapper `hidden print:block`). CSS em `src/index.css` (`@media print`).
 - **Testes**: Vitest em ambiente `node` (testes só de `src/utils/**`, co-localizados `*.test.ts`); `npm test` deve passar com 0 falhas antes de qualquer commit.
 - **CSV tolera BOM UTF-8**: Excel/Notepad/VS Code salvam "UTF-8 with BOM" (EF BB BF) e o BOM vira `\uFEFF` no primeiro header (`\uFEFFano`), quebrando validação de coluna obrigatória. `removerBOM()` em `src/utils/csv.ts` stripa na entrada dos dois parsers e `chave()` remove `\uFEFF` residual — **não depender do PapaParse** para isso (o fix deles só veio na 5.5.4).
+- **Sinônimos de coluna CSV**: histórico aceita `atleta`→`aluno`; atletas aceita `aluno`/`atleta`→`nome` (mapas `ALIASES_*` aplicados no `transformHeader`). Arquivos reais do Excel usam `;` como delimitador (Papa auto-detecta) e podem nomear a coluna diferente do PRD — validar sempre com o arquivo real do usuário quando possível.
 - **Typo perigoso já acontecido**: `obrigigatoria` vs `obrigatoria` em interpolação de template string causou `ReferenceError` silencioso só no runtime dos testes — revisar identificadores com acento/typos ao revisar diffs.
 - **Repo usa o kit de documentação**: hook `.githooks/post-commit` cria tags SemVer; sessões registradas via `scripts/nova-sessao.ps1`; nunca criar SESSION.md.
 
@@ -156,6 +157,32 @@ Regras:
 ### Decisões
 - Tolerância ao BOM é responsabilidade do app, não do PapaParse (fix deles só na 5.5.4; `package.json` permite `^5.4.1`)
 - `exportCSV` continua gravando BOM de propósito (compatibilidade Excel) — não remover
+
+### Arquivos
+- `src/utils/csv.ts`
+- `src/utils/csv.test.ts`
+- `CHANGELOG.md`
+- `AGENTS.md`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 10/10/2026 — Fix: arquivo real ResultadoHistoricoGeral.csv (coluna `atleta` + `;`)
+
+### O que foi feito
+- Análise do arquivo real na raiz: BOM e delimitador `;` já tolerados; **único erro restante era `Coluna obrigatória ausente: "aluno"`** — o arquivo usa `atleta` no cabeçalho (`ano;atleta;tempo;medalha;categoria`)
+- `src/utils/csv.ts`: mapas `ALIASES_HISTORICO` (`atleta→aluno`) e `ALIASES_ATLETAS` (`aluno`/`atleta→nome`) aplicados no `transformHeader` (normaliza `meta.fields` e os dados de uma vez); `mensagemColunaAusente()` lista os sinônimos; detecção de cabeçalho repetido agora cobre os sinônimos
+- `src/utils/csv.test.ts`: +4 testes (histórico com BOM+`;`+`atleta` fiel ao arquivo real com cabeçalho repetido; atletas com `aluno`/`atleta` no lugar de `nome`; mensagens de coluna ausente com sinônimos) — 47 testes passando
+- Validação e2e com o arquivo real (simulação read-only do pipeline): **97 eventos, 0 erros**
+- `CHANGELOG.md` + `AGENTS.md` (Contexto Crítico e esta sessão)
+
+### Decisões
+- Aliases no `transformHeader`, não pós-parse: resolve campo obrigatório e registros simultaneamente sem lógica duplicada
+- Colisão de sinônimos (`aluno` + `atleta` no mesmo arquivo) é resolvida pelo Papa (`nome_1`), sem quebra
+- `ResultadoHistoricoGeral.csv` (dados de alunos) **não entra no git**
 
 ### Arquivos
 - `src/utils/csv.ts`
