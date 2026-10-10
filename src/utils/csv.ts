@@ -1,7 +1,8 @@
 import Papa from 'papaparse';
-import type { Atleta, EventoHistorico, Genero, Medalha, Periodo } from '../types';
+import type { Atleta, EventoHistorico, Genero, Medalha } from '../types';
 import { calcularMedalha, parseTempo } from './medalhas';
 import { categoriaPorIdade, normalizarCategoria } from './categorias';
+import { periodoDoHorario } from './periodo';
 
 export interface ResultadoCSV {
   atletas: Atleta[];
@@ -31,13 +32,6 @@ function normalizarGenero(valor: string): Genero | null {
   const v = chave(valor);
   if (v === 'feminino') return 'feminino';
   if (v === 'masculino') return 'masculino';
-  return null;
-}
-
-function normalizarPeriodo(valor: string): Periodo | null {
-  const v = chave(valor);
-  if (v === 'manha') return 'manhã';
-  if (v === 'tarde') return 'tarde';
   return null;
 }
 
@@ -131,10 +125,10 @@ export function parseCSVAtletas(texto: string): ResultadoCSV {
       return;
     }
 
-    const periodo = normalizarPeriodo(linha.horario ?? '');
+    const periodo = periodoDoHorario(linha.horario ?? '');
     if (!periodo) {
       erros.push(
-        `Linha ${numeroLinha}: horário inválido ("${linha.horario ?? ''}") — use manhã ou tarde`,
+        `Linha ${numeroLinha}: horário inválido ("${linha.horario ?? ''}") — use manhã, tarde ou um horário (ex.: 08:45)`,
       );
       return;
     }

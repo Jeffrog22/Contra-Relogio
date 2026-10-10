@@ -79,6 +79,7 @@ Regras:
 - **CSV tolera BOM UTF-8**: Excel/Notepad/VS Code salvam "UTF-8 with BOM" (EF BB BF) e o BOM vira `\uFEFF` no primeiro header (`\uFEFFano`), quebrando validação de coluna obrigatória. `removerBOM()` em `src/utils/csv.ts` stripa na entrada dos dois parsers e `chave()` remove `\uFEFF` residual — **não depender do PapaParse** para isso (o fix deles só veio na 5.5.4).
 - **Sinônimos de coluna CSV**: histórico aceita `atleta`→`aluno`; atletas aceita `aluno`/`atleta`→`nome` (mapas `ALIASES_*` aplicados no `transformHeader`). Arquivos reais do Excel usam `;` como delimitador (Papa auto-detecta) e podem nomear a coluna diferente do PRD — validar sempre com o arquivo real do usuário quando possível.
 - **Versão exibida no app**: `__APP_VERSION__` é injetado pelo `define` do `vite.config.ts` via `git describe --tags --abbrev=0` (tag real). O hook post-commit **não** sincroniza o `package.json` — ele é só fallback (para CI/Pages sem tags) e deve ser atualizado manualmente junto com a tag.
+- **Horário do CSV vira período**: coluna `horario` aceita `manhã`/`tarde` **ou horário** (`08:45`, `13.05`, `08h45`, `HH:MM:SS`) via `periodoDoHorario()` em `src/utils/periodo.ts`; **corte às 13:00** (antes → manhã, a partir → tarde, escolhido pelo usuário); `Periodo` continua sendo só `'manhã' | 'tarde'`.
 - **Typo perigoso já acontecido**: `obrigigatoria` vs `obrigatoria` em interpolação de template string causou `ReferenceError` silencioso só no runtime dos testes — revisar identificadores com acento/typos ao revisar diffs.
 - **Repo usa o kit de documentação**: hook `.githooks/post-commit` cria tags SemVer; sessões registradas via `scripts/nova-sessao.ps1`; nunca criar SESSION.md.
 
@@ -218,6 +219,37 @@ Regras:
 - `package.json`
 - `src/components/ui/Badge.tsx`
 - `src/components/layout/TopBar.tsx`
+- `CHANGELOG.md`
+- `AGENTS.md`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 10/10/2026 — Horário do CSV convertido em período (corte 13:00)
+
+### O que foi feito
+- Bug: arquivo real de atletas com `horario` como horário (`08:45`, `13:45`) reprovava em `normalizarPeriodo`, que só aceitava as palavras `manhã`/`tarde`
+- `src/utils/periodo.ts` (novo): função pura `periodoDoHorario(valor)` — aceita palavras (caixa/acento tolerados) ou horário (`08:45`, `8:45`, `13.05`, `08h45`, `14:30:00`); valida faixa (hora ≤ 23, min ≤ 59); **corte às 13:00** (antes → manhã, a partir → tarde, decisão do usuário); inválido → `null`
+- `src/utils/csv.ts`: `normalizarPeriodo` removida — `parseCSVAtletas` usa `periodoDoHorario` direto; mensagem de erro agora sugere `use manhã, tarde ou um horário (ex.: 08:45)`
+- `src/pages/CarregarPage.tsx`: instrução de upload atualizada com o formato de horário e a regra do corte
+- Testes: `src/utils/periodo.test.ts` (4) + 2 em `csv.test.ts` (horários reais `08:45`/`13:45` e rejeição com nova mensagem) — **53 testes passando**
+- Verificação: `tsc -b` 0 erros, `npm run build` OK
+- `CHANGELOG.md` + `AGENTS.md` (Contexto Crítico e esta sessão)
+
+### Decisões
+- Corte 13:00 escolhido pelo usuário (12:59 ainda é manhã)
+- Função em módulo próprio (`periodo.ts`), reutilizável além do CSV
+- `Periodo` continua `'manhã' | 'tarde'` — o horário original não é persistido, só o período derivado
+
+### Arquivos
+- `src/utils/periodo.ts`
+- `src/utils/periodo.test.ts`
+- `src/utils/csv.ts`
+- `src/utils/csv.test.ts`
+- `src/pages/CarregarPage.tsx`
 - `CHANGELOG.md`
 - `AGENTS.md`
 

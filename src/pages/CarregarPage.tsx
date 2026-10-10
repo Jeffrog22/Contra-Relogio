@@ -56,7 +56,8 @@ export function CarregarPage() {
         <CardHeading icone="📄" titulo="Upload do arquivo" />
         <CardDescricao>
           Colunas obrigatórias: <b>nome, idade, categoria, genero, horario, professor, nivel</b> —
-          e opcional <b>tempo</b>. Gênero: feminino | masculino. Horário: manhã | tarde.
+          e opcional <b>tempo</b>. Gênero: feminino | masculino. Horário: manhã | tarde | horário
+          (ex.: 08:45 — antes das 13h é manhã, a partir das 13h é tarde).
         </CardDescricao>
 
         <div className="flex flex-wrap items-center gap-3">

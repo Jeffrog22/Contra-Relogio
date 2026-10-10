@@ -118,6 +118,30 @@ describe('parseCSVAtletas', () => {
     expect(erros[0]).toContain('"nome"');
     expect(erros[0]).toContain('aluno, atleta');
   });
+
+  it('converte horários em período manhã/tarde (arquivo real)', () => {
+    const csv = [
+      CABECALHO,
+      'Ana Silva,11,Petiz,feminino,08:45,J,Nível 1 A,20.10',
+      'Bruno Luz,12,Petiz,masculino,13:45,K,Nível 1 A,',
+    ].join('\n');
+
+    const { atletas, erros } = parseCSVAtletas(csv);
+    expect(erros).toEqual([]);
+    expect(atletas).toHaveLength(2);
+    expect(atletas[0].periodo).toBe('manhã');
+    expect(atletas[1].periodo).toBe('tarde');
+  });
+
+  it('mantém a rejeição de horário inválido com a nova mensagem', () => {
+    const { atletas, erros } = parseCSVAtletas(
+      'nome,idade,categoria,genero,horario,professor,nivel\nAna,11,Petiz,feminino,noite,J,Nível 1 A',
+    );
+    expect(atletas).toHaveLength(0);
+    expect(erros).toHaveLength(1);
+    expect(erros[0]).toContain('horário inválido');
+    expect(erros[0]).toContain('ex.: 08:45');
+  });
 });
 
 describe('parseCSVHistorico', () => {

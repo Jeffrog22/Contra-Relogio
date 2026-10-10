@@ -8,6 +8,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Unreleased]
 ### Added
 - Indicador discreto da versão no TopBar (logo após o nome do app): texto cinza `text-[10px]` sem fundo (`v{versão}`); versão injetada em build via `define` do Vite a partir da tag Git (`git describe`, fallback `package.json`)
+- `periodoDoHorario()` (`src/utils/periodo.ts`): converte a coluna `horario` em período — aceita `manhã`/`tarde` **ou horário** (`08:45`, `13.05`, `08h45`); corte às 13:00 (antes → manhã, a partir → tarde); instrução na tela de upload atualizada
 
 ### Changed
 - (mudanças em funcionalidades existentes)
