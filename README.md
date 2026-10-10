@@ -91,7 +91,7 @@ Alice Marino Ribeiro,11,Petiz,Mirim,feminino,manhã,J,Nível 2 B,34.66,BRONZE
 
 ## Regras de Negócio (resumo)
 
-- **Categoria** é calculada diretamente da idade (tabela em `src/utils/categorias.ts`), independente do ano — o mesmo app serve qualquer edição. Se a categoria oficial do CSV divergir da calculada, a listagem exibe um selo de divergência.
+- **Categoria** é calculada diretamente da idade (tabela em `src/utils/categorias.ts`), independente do ano — o mesmo app serve qualquer edição. Se a categoria oficial do CSV divergir da calculada, a listagem exibe um selo de divergência. Subclasses/turmas no CSV (`Mirim II`, `Petiz A`) são normalizadas para a categoria-base.
 - **Medalha** (`src/utils/medalhas.ts`): compara o tempo com a faixa da categoria **+ gênero**. Tempo vazio, `0` ou não numérico → `Sem Tempo`. Ex.: faixa OURO `< 28,00` significa que `28,00` exato já é PRATA.
 - **Balizamento** (`src/utils/balizamento.ts`): feminino primeiro, depois masculino; agrupamento por `categoria + nível`; séries com **apenas 3 ou 4 atletas** (nunca 1 ou 2). Sobras de um grupo se redistribuem com o grupo vizinho do mesmo gênero (ex.: 5+3 → 4+4; 6 → 3+3; 9 → 3+3+3). Raias: série de 4 → `1,2,3,4`; série de 3 → `2,3,4`; **nunca raia 5**. Casos impossíveis (grupo isolado com 1, 2 ou 5 atletas) geram série com selo de aviso.
 - **Impressão**: TopBar/Sidebar/botões são ocultos via `@media print`.

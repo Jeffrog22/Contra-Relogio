@@ -43,6 +43,23 @@ export function normalizarCategoria(valor: string): Categoria | null {
   for (const cat of CATEGORIAS) {
     if (chaveCategoria(cat) === limpo) return cat;
   }
+
+  // Subclasses/turmas: "Mirim II", "Pré-Mirim II", "Petiz A" → tenta sem o último token.
+  // Match por token (não substring): "Mirinho" continua inválido.
+  const tokens = valor
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .split(/\s+/);
+  while (tokens.length > 1) {
+    tokens.pop();
+    const base = chaveCategoria(tokens.join(' '));
+    for (const cat of CATEGORIAS) {
+      if (chaveCategoria(cat) === base) return cat;
+    }
+  }
+
   return null;
 }
 

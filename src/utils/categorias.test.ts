@@ -35,7 +35,19 @@ describe('normalizarCategoria', () => {
 
   it('retorna null para categoria desconhecida', () => {
     expect(normalizarCategoria('master')).toBeNull();
+    expect(normalizarCategoria('master senior')).toBeNull();
+    expect(normalizarCategoria('mirinho')).toBeNull();
     expect(normalizarCategoria('')).toBeNull();
+  });
+
+  it('normaliza subclasses/turmas para a categoria-base', () => {
+    expect(normalizarCategoria('Mirim II')).toBe('Mirim');
+    expect(normalizarCategoria('mirim i')).toBe('Mirim');
+    expect(normalizarCategoria('Pré-Mirim II')).toBe('Pré-Mirim');
+    expect(normalizarCategoria('pre mirim ii')).toBe('Pré-Mirim');
+    expect(normalizarCategoria('Petiz A')).toBe('Petiz');
+    expect(normalizarCategoria('Infantil Azul')).toBe('Infantil');
+    expect(normalizarCategoria('Juvenil II')).toBe('Juvenil');
   });
 });
 

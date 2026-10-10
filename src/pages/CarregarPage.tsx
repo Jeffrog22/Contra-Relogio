@@ -57,7 +57,9 @@ export function CarregarPage() {
         <CardDescricao>
           Colunas obrigatórias: <b>nome, idade, categoria, genero, horario, professor, nivel</b> —
           e opcional <b>tempo</b>. Gênero: feminino | masculino. Horário: manhã | tarde | horário
-          (ex.: 08:45 — antes das 13h é manhã, a partir das 13h é tarde).
+          (ex.: 08:45 — antes das 13h é manhã, a partir das 13h é tarde). Categoria: Pré-Mirim |
+          Mirim | Petiz | Infantil | Juvenil | Júnior | Sênior — subclasses como "Mirim II" viram a
+          categoria-base (Mirim).
         </CardDescricao>
 
         <div className="flex flex-wrap items-center gap-3">

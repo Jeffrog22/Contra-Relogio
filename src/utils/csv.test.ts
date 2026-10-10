@@ -142,6 +142,22 @@ describe('parseCSVAtletas', () => {
     expect(erros[0]).toContain('horário inválido');
     expect(erros[0]).toContain('ex.: 08:45');
   });
+
+  it('normaliza subclasses de categoria (ex.: "Mirim II" → Mirim)', () => {
+    const csv = [
+      CABECALHO,
+      'Ana Silva,10,Mirim II,feminino,08:45,J,Nível 1 A,20.10',
+      'Bruno Luz,11,Petiz A,masculino,13:45,K,Nível 1 A,',
+    ].join('\n');
+
+    const { atletas, erros } = parseCSVAtletas(csv);
+    expect(erros).toEqual([]);
+    expect(atletas).toHaveLength(2);
+    expect(atletas[0].categoriaOficial).toBe('Mirim');
+    expect(atletas[0].categoriaCalculada).toBe('Mirim');
+    expect(atletas[0].divergencia).toBe(false);
+    expect(atletas[1].categoriaOficial).toBe('Petiz');
+  });
 });
 
 describe('parseCSVHistorico', () => {

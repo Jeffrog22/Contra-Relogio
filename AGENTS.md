@@ -80,6 +80,7 @@ Regras:
 - **Sinônimos de coluna CSV**: histórico aceita `atleta`→`aluno`; atletas aceita `aluno`/`atleta`→`nome` (mapas `ALIASES_*` aplicados no `transformHeader`). Arquivos reais do Excel usam `;` como delimitador (Papa auto-detecta) e podem nomear a coluna diferente do PRD — validar sempre com o arquivo real do usuário quando possível.
 - **Versão exibida no app**: `__APP_VERSION__` é injetado pelo `define` do `vite.config.ts` via `git describe --tags --abbrev=0` (tag real). O hook post-commit **não** sincroniza o `package.json` — ele é só fallback (para CI/Pages sem tags) e deve ser atualizado manualmente junto com a tag.
 - **Horário do CSV vira período**: coluna `horario` aceita `manhã`/`tarde` **ou horário** (`08:45`, `13.05`, `08h45`, `HH:MM:SS`) via `periodoDoHorario()` em `src/utils/periodo.ts`; **corte às 13:00** (antes → manhã, a partir → tarde, escolhido pelo usuário); `Periodo` continua sendo só `'manhã' | 'tarde'`.
+- **Categoria com subclasses**: `normalizarCategoria` aceita sufixos de turma (`Mirim II`, `Petiz A`, `Infantil Azul`) e normaliza para a categoria-base (match exato ou remoção progressiva de tokens finais, nunca substring — `Mirinho` continua inválido). A subdivisão **não é persistida**: `categoriaOficial` guarda só a base; balizamento/agrupamento usam `categoriaCalculada` (idade) — nunca a oficial.
 - **Typo perigoso já acontecido**: `obrigigatoria` vs `obrigatoria` em interpolação de template string causou `ReferenceError` silencioso só no runtime dos testes — revisar identificadores com acento/typos ao revisar diffs.
 - **Repo usa o kit de documentação**: hook `.githooks/post-commit` cria tags SemVer; sessões registradas via `scripts/nova-sessao.ps1`; nunca criar SESSION.md.
 
@@ -250,6 +251,33 @@ Regras:
 - `src/utils/csv.ts`
 - `src/utils/csv.test.ts`
 - `src/pages/CarregarPage.tsx`
+- `CHANGELOG.md`
+- `AGENTS.md`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 10/10/2026 — Fix: categoria "Mirim II" normalizada para a base
+
+### O que foi feito
+- Bug: CSV real com subclasses de turma (`Mirim II`) reprovava em `normalizarCategoria` (match exato → `mirimii`)
+- `src/utils/categorias.ts`: fallback em `normalizarCategoria` — sem match exato, remove o último token e tenta de novo (`Mirim II`→`Mirim`, `Pré-Mirim II`→`Pré-Mirim`, `Petiz A`→`Petiz`, `Infantil Azul`→`Infantil`); match por token, nunca substring (`Mirinho`/`Master` continuam inválidos)
+- Testes: `categorias.test.ts` +3 blocos/afirmações (subclasses e mantém `master`/`mirinho`→null) + caso real em `csv.test.ts` — **55 testes passando**
+- UI/docs: `CarregarPage` lista as categorias e a regra de subclass; README (regra de categoria); CHANGELOG; AGENTS.md (Contexto Crítico + sessão)
+
+### Decisões
+- Subdivisão **não é persistida**: `categoriaOficial` guarda a base — balizamento/medalha/telas usam `categoriaCalculada` (idade), então zero mudança de tipo ou UI
+- Mesma função cobre atletas e histórico automaticamente
+
+### Arquivos
+- `src/utils/categorias.ts`
+- `src/utils/categorias.test.ts`
+- `src/utils/csv.test.ts`
+- `src/pages/CarregarPage.tsx`
+- `README.md`
 - `CHANGELOG.md`
 - `AGENTS.md`
 
