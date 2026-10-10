@@ -125,9 +125,39 @@ Contra-Relógio/
 └── templates/                # templates dos docs + hook post-commit
 ```
 
-## Deploy
+## Deploy — Cloudflare Pages
 
-SPA estática — build com `npm run build` e publique a pasta `dist/` (Cloudflare Pages, Netlify, GitHub Pages etc.). Nenhuma variável de ambiente é necessária. Para rotas deep-link em host estático, configure rewrite de `/*` → `/index.html`.
+SPA estática sem backend: build em `dist/`, nenhuma variável de ambiente necessária.
+
+### Opção A — Conexão com o GitHub (recomendada, deploy automático)
+
+1. [Cloudflare Dashboard](https://dash.cloudflare.com) → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**.
+2. Selecione o repositório **`Jeffrog22/Contra-Relogio`** (autorize o GitHub se pedir).
+3. Configure a build:
+   | Campo | Valor |
+   |---|---|
+   | Framework preset | **Vite** (ou *None*) |
+   | Build command | `npm run build` |
+   | Build output directory | `dist` |
+   | Node version | 18+ (padrão já serve) |
+4. **Save and Deploy** → o site fica em `https://contra-relogio.pages.dev`.
+5. A partir daí, cada `git push` em `master` gera um deploy automático.
+
+### Opção B — Deploy manual via Wrangler (CLI)
+
+```bash
+npm run build                 # gera dist/
+npx wrangler login            # autentica no Cloudflare (uma vez)
+npx wrangler pages deploy dist --project-name contra-relogio
+```
+
+### Rotas SPA (deep links)
+
+O arquivo `public/_redirects` (`/*  /index.html  200`) é copiado para `dist/` em todo build — é ele que faz `/lista`, `/balizamento`, `/controle` etc. voltarem a funcionar ao recarregar a página no Pages. Não é preciso configurar nada no dashboard.
+
+### Domínio próprio (opcional)
+
+Pages → seu projeto → **Custom domains** → **Set up a custom domain** (o DNS do domínio aponta para `contra-relogio.pages.dev`; certificado TLS é automático).
 
 ## Kit de Documentação (scripts e templates)
 
