@@ -1,5 +1,5 @@
 ﻿
-# Development Guidelines - Festival Interno PPt
+# Development Guidelines - Festival Interno
 
 Este documento estabelece as convenções de versionamento, commits e a rotina obrigatória de documentação para o projeto.
 

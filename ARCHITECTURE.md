@@ -1,4 +1,4 @@
-# ARCHITECTURE — Festival Interno PPt
+# ARCHITECTURE — Festival Interno
 
 > Arquitetura do SPA. Toda implementação deve seguir esta estrutura (ver `DEVELOPMENT.md` §6).
 

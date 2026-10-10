@@ -32,7 +32,7 @@ Regras:
 - Tags conflitantes (orphan) são puladas automaticamente (loop `while` incrementa PATCH)
 
 ## Identidade
-- **Nome:** Festival Interno PPt
+- **Nome:** Festival Interno
 - **Descrição:** App de gestão do Festival Interno de Natação Contra o Relógio (25 m)
 - **Repositório:** `https://github.com/Jeffrog22/Contra-Relogio`
 - **Versão atual:** v0.2.0
@@ -322,6 +322,33 @@ Regras:
 - `PRD.md`
 - `CHANGELOG.md`
 - `AGENTS.md`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 10/10/2026 — Rename: "Festival Interno PPt" → "Festival Interno"
+
+### O que foi feito
+- Renomeação propagada: `index.html` (aba), `PRD.md`, `DEVELOPMENT.md`, `CHANGELOG.md`, `ARCHITECTURE.md`, heading de `/controle` (`ControlePage`) e identidade no `AGENTS.md` — **"PPt" removido do nome em todo o repo** (usuário iniciou a troca em 3 docs; o restante foi completado por nós)
+- `CarregarPage`: ícone do card "Pré-visualização" removido (`icone=""` — pedido do usuário; `CardHeading` aceita string vazia)
+- Espaço órfão no título do `ARCHITECTURE.md` corrigido
+- `npx tsc -b --force`: 0 erros; 55 testes OK
+
+### Decisões
+- Nome do pacote npm (`festival-interno`) já estava sem o "PPt" — só os textos visíveis precisavam de update
+
+### Arquivos
+- `index.html`
+- `PRD.md`
+- `DEVELOPMENT.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `AGENTS.md`
+- `src/pages/ControlePage.tsx`
+- `src/pages/CarregarPage.tsx`
 
 ### Typecheck
 - Frontend: 0 erros

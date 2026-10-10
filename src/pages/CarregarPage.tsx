@@ -109,7 +109,7 @@ export function CarregarPage() {
 
       {atletas.length > 0 && (
         <Card>
-          <CardHeading icone="👁️" titulo="Pré-visualização" />
+          <CardHeading icone="" titulo="Pré-visualização" />
           <TabelaGenerica
             className="mb-4"
             colunas={[

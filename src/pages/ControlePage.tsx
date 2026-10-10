@@ -152,7 +152,7 @@ export function ControlePage() {
       </div>
 
       <div className="hidden print:block print-area">
-        <h1 className="text-xl font-semibold mb-4">Resultados — Festival Interno PPt</h1>
+        <h1 className="text-xl font-semibold mb-4">Resultados — Festival Interno</h1>
         {seriesImpressao.map((serie) => (
           <div key={serie.numero} className="mb-6">
             <h2 className="text-lg font-semibold mb-2">

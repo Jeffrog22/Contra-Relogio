@@ -1,4 +1,4 @@
-# PRD — Festival Interno PPt
+# PRD — Festival Interno
 
 > Aplicativo web para gestão do **Festival de Natação Contra-Relógio** (provas de 25 m contra o relógio). Cobre cadastro de atletas, balizamento automático, cálculo de medalhas por tabela de índices, controle de resultados e análise comparativa entre edições.
 
