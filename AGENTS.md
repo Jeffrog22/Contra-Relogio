@@ -34,7 +34,7 @@ Regras:
 ## Identidade
 - **Nome:** Festival Interno PPt
 - **Descrição:** App de gestão do Festival Interno de Natação Contra o Relógio (25 m)
-- **Repositório:** ``
+- **Repositório:** `https://github.com/Jeffrog22/Contra-Relogio`
 - **Versão atual:** v0.2.0
 - **Stack:** SPA React 18 + TypeScript + Vite, Tailwind CSS (darkMode: class), React Router v6, Zustand, PapaParse, Vitest
 - **Deploy:** Cloudflare Pages (frontend puro, sem backend)
