@@ -7,7 +7,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 ### Added
-- (novas funcionalidades)
+- Badge discreto da versão no TopBar (logo após o nome do app): `v{versão}` em `Badge` cinza `text-[10px]`; versão injetada em build via `define` do Vite a partir da tag Git (`git describe`, fallback `package.json`)
 
 ### Changed
 - (mudanças em funcionalidades existentes)

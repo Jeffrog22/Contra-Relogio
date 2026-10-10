@@ -13,12 +13,13 @@ const TONS: Record<Tom, string> = {
 interface Props {
   tom: Tom;
   children: ReactNode;
+  className?: string;
 }
 
-export function Badge({ tom, children }: Props) {
+export function Badge({ tom, children, className = '' }: Props) {
   return (
     <span
-      className={`text-xs font-medium px-2 py-0.5 rounded-full inline-block ${TONS[tom]}`}
+      className={`text-xs font-medium px-2 py-0.5 rounded-full inline-block ${TONS[tom]} ${className}`}
     >
       {children}
     </span>

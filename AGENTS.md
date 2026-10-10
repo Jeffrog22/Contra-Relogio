@@ -78,6 +78,7 @@ Regras:
 - **Testes**: Vitest em ambiente `node` (testes só de `src/utils/**`, co-localizados `*.test.ts`); `npm test` deve passar com 0 falhas antes de qualquer commit.
 - **CSV tolera BOM UTF-8**: Excel/Notepad/VS Code salvam "UTF-8 with BOM" (EF BB BF) e o BOM vira `\uFEFF` no primeiro header (`\uFEFFano`), quebrando validação de coluna obrigatória. `removerBOM()` em `src/utils/csv.ts` stripa na entrada dos dois parsers e `chave()` remove `\uFEFF` residual — **não depender do PapaParse** para isso (o fix deles só veio na 5.5.4).
 - **Sinônimos de coluna CSV**: histórico aceita `atleta`→`aluno`; atletas aceita `aluno`/`atleta`→`nome` (mapas `ALIASES_*` aplicados no `transformHeader`). Arquivos reais do Excel usam `;` como delimitador (Papa auto-detecta) e podem nomear a coluna diferente do PRD — validar sempre com o arquivo real do usuário quando possível.
+- **Versão exibida no app**: `__APP_VERSION__` é injetado pelo `define` do `vite.config.ts` via `git describe --tags --abbrev=0` (tag real). O hook post-commit **não** sincroniza o `package.json` — ele é só fallback (para CI/Pages sem tags) e deve ser atualizado manualmente junto com a tag.
 - **Typo perigoso já acontecido**: `obrigigatoria` vs `obrigatoria` em interpolação de template string causou `ReferenceError` silencioso só no runtime dos testes — revisar identificadores com acento/typos ao revisar diffs.
 - **Repo usa o kit de documentação**: hook `.githooks/post-commit` cria tags SemVer; sessões registradas via `scripts/nova-sessao.ps1`; nunca criar SESSION.md.
 
@@ -187,6 +188,35 @@ Regras:
 ### Arquivos
 - `src/utils/csv.ts`
 - `src/utils/csv.test.ts`
+- `CHANGELOG.md`
+- `AGENTS.md`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 10/10/2026 — Badge de versão no TopBar (git describe → build)
+
+### O que foi feito
+- `vite.config.ts`: `define: { __APP_VERSION__ }` com `obterVersao()` — lê a tag Git real via `git describe --tags --abbrev=0` (stderr silenciado) e cai para `package.json` no catch (CI/Pages sem tags)
+- `src/vite-env.d.ts` (novo): `declare const __APP_VERSION__: string` + referência `vite/client`
+- `package.json`: versão alinhada para `0.3.2` (fallback correto)
+- `src/components/ui/Badge.tsx`: prop opcional `className` (retrocompatível)
+- `src/components/layout/TopBar.tsx`: `<Badge tom="cinza" className="ml-2 align-middle text-[10px] font-semibold">v{__APP_VERSION__}</Badge>` logo após o nome do app
+- Verificação: 47 testes OK, `tsc -b` 0 erros, `npm run build` OK com `0.3.2` presente no bundle
+
+### Decisões
+- Hook post-commit não mexe em `package.json` (só cria tag) — sincronização manual documentada no Contexto Crítico
+- Badge segue o DS (tom cinza de `identidade visual Fizapp.txt` §Badges), reduzido para `text-[10px]` para ficar discreto
+
+### Arquivos
+- `vite.config.ts`
+- `src/vite-env.d.ts`
+- `package.json`
+- `src/components/ui/Badge.tsx`
+- `src/components/layout/TopBar.tsx`
 - `CHANGELOG.md`
 - `AGENTS.md`
 
