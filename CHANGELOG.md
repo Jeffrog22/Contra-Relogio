@@ -13,7 +13,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - (mudanças em funcionalidades existentes)
 
 ### Fixed
-- (correções de bugs)
+- Upload de CSV com BOM UTF-8 (EF BB BF) não falha mais na validação de colunas obrigatórias (`parseCSVAtletas` e `parseCSVHistorico` removem o BOM antes do parsing; `chave()` ignora `\uFEFF` residual)
 
 ### Removed
 - (funcionalidades removidas)

@@ -76,6 +76,7 @@ Regras:
 - **Persistência**: Zustand `persist` na chave `festival-storage`; tema também em `festival-tema` (lido em `main.tsx` para evitar flash do dark mode).
 - **Impressão**: chrome com classe `no-print`; áreas de impressão com `print-area` (+ wrapper `hidden print:block`). CSS em `src/index.css` (`@media print`).
 - **Testes**: Vitest em ambiente `node` (testes só de `src/utils/**`, co-localizados `*.test.ts`); `npm test` deve passar com 0 falhas antes de qualquer commit.
+- **CSV tolera BOM UTF-8**: Excel/Notepad/VS Code salvam "UTF-8 with BOM" (EF BB BF) e o BOM vira `\uFEFF` no primeiro header (`\uFEFFano`), quebrando validação de coluna obrigatória. `removerBOM()` em `src/utils/csv.ts` stripa na entrada dos dois parsers e `chave()` remove `\uFEFF` residual — **não depender do PapaParse** para isso (o fix deles só veio na 5.5.4).
 - **Typo perigoso já acontecido**: `obrigigatoria` vs `obrigatoria` em interpolação de template string causou `ReferenceError` silencioso só no runtime dos testes — revisar identificadores com acento/typos ao revisar diffs.
 - **Repo usa o kit de documentação**: hook `.githooks/post-commit` cria tags SemVer; sessões registradas via `scripts/nova-sessao.ps1`; nunca criar SESSION.md.
 
@@ -136,6 +137,29 @@ Regras:
 - `src/index.css`
 - `README.md`
 - `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `AGENTS.md`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 10/10/2026 — Fix: upload de CSV com BOM UTF-8 falhava na validação
+
+### O que foi feito
+- `src/utils/csv.ts`: helper `removerBOM()` (`texto.replace(/^\uFEFF+/, '')`) aplicado antes do `Papa.parse` em `lerTabela()` (atletas) e `parseCSVHistorico()`; `chave()` agora remove `\uFEFF` em qualquer posição do header
+- `src/utils/csv.test.ts`: 2 testes de regressão (BOM no início do CSV de atletas e do histórico) — 43 testes passando
+- `CHANGELOG.md`: entrada em `[Unreleased] → Fixed`
+
+### Decisões
+- Tolerância ao BOM é responsabilidade do app, não do PapaParse (fix deles só na 5.5.4; `package.json` permite `^5.4.1`)
+- `exportCSV` continua gravando BOM de propósito (compatibilidade Excel) — não remover
+
+### Arquivos
+- `src/utils/csv.ts`
+- `src/utils/csv.test.ts`
 - `CHANGELOG.md`
 - `AGENTS.md`
 

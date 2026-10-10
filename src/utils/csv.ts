@@ -13,8 +13,13 @@ export interface ResultadoHistorico {
   erros: string[];
 }
 
+function removerBOM(texto: string): string {
+  return texto.replace(/^\uFEFF+/, '');
+}
+
 function chave(valor: string): string {
   return valor
+    .replace(/\uFEFF/g, '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
@@ -66,7 +71,7 @@ function lerTabela(texto: string): {
   dados: Record<string, string>[];
   erros: string[];
 } {
-  const resultado = Papa.parse<Record<string, string>>(texto, {
+  const resultado = Papa.parse<Record<string, string>>(removerBOM(texto), {
     header: true,
     skipEmptyLines: 'greedy',
     transformHeader: (h) => chave(h),
@@ -148,7 +153,7 @@ export function parseCSVAtletas(texto: string): ResultadoCSV {
 }
 
 export function parseCSVHistorico(texto: string): ResultadoHistorico {
-  const resultado = Papa.parse<Record<string, string>>(texto, {
+  const resultado = Papa.parse<Record<string, string>>(removerBOM(texto), {
     header: true,
     skipEmptyLines: 'greedy',
     transformHeader: (h) => chave(h),

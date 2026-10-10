@@ -81,6 +81,19 @@ describe('parseCSVAtletas', () => {
     expect(atletas).toHaveLength(0);
     expect(erros.some((e) => e.includes('"idade"'))).toBe(true);
   });
+
+  it('tolera BOM UTF-8 (EF BB BF) no início do arquivo', () => {
+    const csv = `\uFEFF${[
+      CABECALHO,
+      'Ana Silva,11,Petiz,feminino,manhã,J,Nível 1 A,20.10',
+    ].join('\n')}`;
+
+    const { atletas, erros } = parseCSVAtletas(csv);
+    expect(erros).toEqual([]);
+    expect(atletas).toHaveLength(1);
+    expect(atletas[0].nome).toBe('Ana Silva');
+    expect(atletas[0].periodo).toBe('manhã');
+  });
 });
 
 describe('parseCSVHistorico', () => {
@@ -118,5 +131,18 @@ describe('parseCSVHistorico', () => {
     expect(erros).toHaveLength(2);
     expect(erros[0]).toContain('ano inválido');
     expect(erros[1]).toContain('medalha inválida');
+  });
+
+  it('tolera BOM UTF-8 (EF BB BF) no início do arquivo', () => {
+    const csv = `\uFEFF${[
+      'ano,aluno,tempo,medalha,categoria,genero',
+      '2024,Ana Cristina Goldberger,22.36,PRATA,Petiz,feminino',
+    ].join('\n')}`;
+
+    const { eventos, erros } = parseCSVHistorico(csv);
+    expect(erros).toEqual([]);
+    expect(eventos).toHaveLength(1);
+    expect(eventos[0].ano).toBe(2024);
+    expect(eventos[0].medalha).toBe('PRATA');
   });
 });
