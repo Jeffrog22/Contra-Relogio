@@ -204,12 +204,13 @@ Regras:
 - `src/vite-env.d.ts` (novo): `declare const __APP_VERSION__: string` + referência `vite/client`
 - `package.json`: versão alinhada para `0.3.2` (fallback correto)
 - `src/components/ui/Badge.tsx`: prop opcional `className` (retrocompatível)
-- `src/components/layout/TopBar.tsx`: `<Badge tom="cinza" className="ml-2 align-middle text-[10px] font-semibold">v{__APP_VERSION__}</Badge>` logo após o nome do app
+- `src/components/layout/TopBar.tsx`: `<span className="ml-2 align-middle text-[10px] font-normal text-gray-400 dark:text-gray-500">v{__APP_VERSION__}</span>` logo após o nome do app (texto puro, sem Badge — pedido do usuário)
 - Verificação: 47 testes OK, `tsc -b` 0 erros, `npm run build` OK com `0.3.2` presente no bundle
 
 ### Decisões
 - Hook post-commit não mexe em `package.json` (só cria tag) — sincronização manual documentada no Contexto Crítico
 - Badge segue o DS (tom cinza de `identidade visual Fizapp.txt` §Badges), reduzido para `text-[10px]` para ficar discreto
+- Prop `className` do Badge mantida (genérica, retrocompatível) mesmo após troca do TopBar por texto puro
 
 ### Arquivos
 - `vite.config.ts`

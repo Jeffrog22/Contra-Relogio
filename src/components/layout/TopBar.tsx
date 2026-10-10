@@ -1,5 +1,4 @@
 import { useAppStore } from '../../store/useAppStore';
-import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 
 export function TopBar() {
@@ -10,9 +9,9 @@ export function TopBar() {
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-[57px] flex items-center justify-between px-4 no-print">
       <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
         Festival de Natação Contra Relógio
-        <Badge tom="cinza" className="ml-2 align-middle text-[10px] font-semibold">
+        <span className="ml-2 align-middle text-[10px] font-normal text-gray-400 dark:text-gray-500">
           v{__APP_VERSION__}
-        </Badge>
+        </span>
       </span>
       <Button
         variante="ghost"
