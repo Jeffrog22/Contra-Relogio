@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { Atleta, Categoria, Genero, Medalha, Periodo } from '../types';
+import type { Atleta, Categoria, Genero, Periodo } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { exportCSV } from '../utils/csv';
 import { formatTempo, parseTempo } from '../utils/medalhas';
@@ -23,8 +23,11 @@ type Campo =
 
 type Edicao = { id: string; campo: Campo };
 
-const MEDALHAS: (Medalha | 'todas')[] = ['todas', 'OURO', 'PRATA', 'BRONZE', 'Sem Tempo'];
+type Ordenacao = { campo: Campo; direcao: 'asc' | 'desc' };
+
 const GENEROS: (Genero | 'todos')[] = ['todos', 'feminino', 'masculino'];
+
+const ORDEM_PERIODOS: Periodo[] = ['manhã', 'tarde'];
 
 const INPUT_CLASSE =
   'px-1 py-0.5 text-sm rounded border border-primary-500 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 outline-none';
@@ -35,9 +38,9 @@ export function ListaPage() {
   const mostrarToast = useAppStore((estado) => estado.mostrarToast);
 
   const [busca, setBusca] = useState('');
-  const [medalha, setMedalha] = useState<Medalha | 'todas'>('todas');
   const [categoria, setCategoria] = useState<string>('todas');
   const [genero, setGenero] = useState<Genero | 'todos'>('todos');
+  const [ordenacao, setOrdenacao] = useState<Ordenacao>({ campo: 'nome', direcao: 'asc' });
   const [edicao, setEdicao] = useState<Edicao | null>(null);
   const [rascunho, setRascunho] = useState('');
 
@@ -46,25 +49,79 @@ export function ListaPage() {
     return CATEGORIAS.filter((cat) => presentes.has(cat));
   }, [atletas]);
 
+  function comparar(a: Atleta, b: Atleta, campo: Campo): number {
+    switch (campo) {
+      case 'nome':
+        return a.nome.localeCompare(b.nome, 'pt-BR');
+      case 'idade':
+        return a.idade - b.idade;
+      case 'categoriaOficial':
+        return CATEGORIAS.indexOf(a.categoriaOficial) - CATEGORIAS.indexOf(b.categoriaOficial);
+      case 'genero':
+        return a.genero.localeCompare(b.genero, 'pt-BR');
+      case 'periodo':
+        return ORDEM_PERIODOS.indexOf(a.periodo) - ORDEM_PERIODOS.indexOf(b.periodo);
+      case 'professor':
+        return a.professor.localeCompare(b.professor, 'pt-BR');
+      case 'nivel':
+        return a.nivel.localeCompare(b.nivel, 'pt-BR');
+      case 'tempo': {
+        const tempoA = a.tempo;
+        const tempoB = b.tempo;
+        if (tempoA === undefined && tempoB === undefined) return 0;
+        if (tempoA === undefined) return 1;
+        if (tempoB === undefined) return -1;
+        return tempoA - tempoB;
+      }
+    }
+  }
+
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
-    return atletas.filter((atleta) => {
+    const base = atletas.filter((atleta) => {
       if (termo && !atleta.nome.toLowerCase().includes(termo)) return false;
-      if (medalha !== 'todas' && (atleta.medalha ?? 'Sem Tempo') !== medalha) return false;
       if (categoria !== 'todas' && atleta.categoriaOficial !== categoria) return false;
       if (genero !== 'todos' && atleta.genero !== genero) return false;
       return true;
     });
-  }, [atletas, busca, medalha, categoria, genero]);
+    return [...base].sort((a, b) => {
+      const resultado = comparar(a, b, ordenacao.campo);
+      return ordenacao.direcao === 'asc' ? resultado : -resultado;
+    });
+  }, [atletas, busca, categoria, genero, ordenacao]);
 
-  const filtradoAtivo =
-    busca.trim() !== '' || medalha !== 'todas' || categoria !== 'todas' || genero !== 'todos';
+  const filtradoAtivo = busca.trim() !== '' || categoria !== 'todas' || genero !== 'todos';
 
   function limparFiltros() {
     setBusca('');
-    setMedalha('todas');
     setCategoria('todas');
     setGenero('todos');
+  }
+
+  function ordenarPor(campo: Campo) {
+    setOrdenacao((atual) =>
+      atual.campo === campo
+        ? { campo, direcao: atual.direcao === 'asc' ? 'desc' : 'asc' }
+        : { campo, direcao: 'asc' },
+    );
+  }
+
+  function cabecalhoOrdenavel(campo: Campo, rotulo: string) {
+    return (
+      <button
+        type="button"
+        onClick={() => ordenarPor(campo)}
+        className="uppercase tracking-wider hover:text-primary-600 dark:hover:text-primary-400 transition-colors inline-flex items-center gap-1"
+        title={`Ordenar por ${rotulo}`}
+      >
+        {rotulo}
+        {ordenacao.campo === campo && (
+          <span className="text-primary-600 dark:text-primary-400">
+            {ordenacao.direcao === 'asc' ? '▲' : '▼'}
+          </span>
+        )}
+      </button>
+    );
   }
 
   function iniciarEdicao(atleta: Atleta, campo: Campo, valor: string) {
@@ -255,22 +312,6 @@ export function ListaPage() {
         <div className="space-y-2 mb-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-              Medalha
-            </span>
-            {MEDALHAS.map((opcao) => (
-              <Pill
-                key={opcao}
-                ativo={medalha === opcao}
-                onClick={() => setMedalha(opcao)}
-                className={chipClasse}
-              >
-                {opcao}
-              </Pill>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               Categoria
             </span>
             <Pill
@@ -313,17 +354,17 @@ export function ListaPage() {
           colunas={[
             {
               chave: 'nome',
-              titulo: 'Nome',
+              titulo: cabecalhoOrdenavel('nome', 'Nome'),
               render: (a) => celulaTexto(a, 'nome', a.nome),
             },
             {
               chave: 'idade',
-              titulo: 'Idade',
+              titulo: cabecalhoOrdenavel('idade', 'Idade'),
               render: (a) => celulaTexto(a, 'idade', String(a.idade)),
             },
             {
               chave: 'categoria',
-              titulo: 'Categoria',
+              titulo: cabecalhoOrdenavel('categoriaOficial', 'Categoria'),
               render: (a) =>
                 celulaSelect(
                   a,
@@ -334,7 +375,7 @@ export function ListaPage() {
             },
             {
               chave: 'genero',
-              titulo: 'Gênero',
+              titulo: cabecalhoOrdenavel('genero', 'Gênero'),
               render: (a) =>
                 celulaSelect(
                   a,
@@ -348,7 +389,7 @@ export function ListaPage() {
             },
             {
               chave: 'horario',
-              titulo: 'Horário',
+              titulo: cabecalhoOrdenavel('periodo', 'Horário'),
               render: (a) =>
                 celulaSelect(
                   a,
@@ -362,17 +403,17 @@ export function ListaPage() {
             },
             {
               chave: 'professor',
-              titulo: 'Professor',
+              titulo: cabecalhoOrdenavel('professor', 'Professor'),
               render: (a) => celulaTexto(a, 'professor', a.professor),
             },
             {
               chave: 'nivel',
-              titulo: 'Nível',
+              titulo: cabecalhoOrdenavel('nivel', 'Nível'),
               render: (a) => celulaTexto(a, 'nivel', a.nivel),
             },
             {
               chave: 'tempo',
-              titulo: 'Tempo',
+              titulo: cabecalhoOrdenavel('tempo', 'Tempo'),
               render: (a) =>
                 celulaTexto(
                   a,

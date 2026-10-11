@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 export interface Coluna<T> {
   chave: string;
-  titulo: string;
+  titulo: ReactNode;
   render: (item: T) => ReactNode;
 }
 

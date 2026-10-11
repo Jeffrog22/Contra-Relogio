@@ -14,12 +14,10 @@ import { Button } from '../components/ui/Button';
 import { Pill } from '../components/ui/Pill';
 import { TabelaGenerica, type Coluna } from '../components/ui/TabelaGenerica';
 import { MedalhaBadge } from '../components/ui/MedalhaBadge';
-import { Badge } from '../components/ui/Badge';
 
 interface LinhaTabela {
   id: string;
   serie: number;
-  aviso?: string;
   raia: 1 | 2 | 3 | 4;
   item: AtletaSerie;
 }
@@ -94,7 +92,6 @@ export function BalizamentoPage() {
     serie.atletas.map((item) => ({
       id: `${serie.numero}-${item.atleta.id}`,
       serie: serie.numero,
-      aviso: serie.aviso,
       raia: item.raia,
       item,
     })),
@@ -153,18 +150,6 @@ export function BalizamentoPage() {
       chave: 'serie',
       titulo: 'Série',
       render: (linha) => <span className="font-mono tabular-nums">{linha.serie}</span>,
-    },
-    {
-      chave: 'aviso',
-      titulo: 'Aviso',
-      render: (linha) =>
-        linha.aviso ? (
-          <Badge tom={linha.aviso.includes('incompleta') ? 'vermelho' : 'azul'}>
-            {linha.aviso}
-          </Badge>
-        ) : (
-          <span className="text-gray-300 dark:text-gray-600">—</span>
-        ),
     },
     {
       chave: 'baliza',

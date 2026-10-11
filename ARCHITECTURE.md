@@ -30,7 +30,7 @@ Regra de ouro: **regras de negócio vivem em `src/utils/`** (puras, testáveis, 
 |---|---|---|
 | `/carregar` | `CarregarPage` | Upload CSV → validação → preview → Processar (no card principal) |
 | `/lista` | `ListaPage` | Busca, categoria recalculada, export CSV |
-| `/balizamento` | `BalizamentoPage` | Pills gênero/período → execução automática + "Atualizar" → tabela com coluna Aviso → modo edição (dnd-kit, ✕) |
+| `/balizamento` | `BalizamentoPage` | Pills gênero/período → execução automática + "Atualizar" → tabela de séries → modo edição (dnd-kit, ✕) |
 | `/controle` | `ControlePage` | Edição inline de tempo (máscara `00'00`) → medalha ao vivo → impressão |
 | `/analise` | `AnalisePage` | Upload histórico → filtros → panorama por ano → impressão |
 

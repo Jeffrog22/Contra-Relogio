@@ -41,7 +41,6 @@ export function ControlePage() {
     serie.atletas.map((item) => ({
       key: `${serie.numero}-${item.atleta.id}`,
       serie: serie.numero,
-      aviso: serie.aviso,
       raia: item.raia,
       atleta: item.atleta,
     })),

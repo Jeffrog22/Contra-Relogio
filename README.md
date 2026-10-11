@@ -44,7 +44,7 @@ npm run dev      # http://localhost:5173
 ## Fluxo de Uso
 
 1. **`/carregar`** — envie o CSV de atletas, confira a pré-visualização e clique em **Processar** (botão já no card principal).
-2. **`/lista`** — Lista de Atletas com a categoria oficial do CSV; filtros em chips (medalha, categoria, gênero) com **↺ limpar filtros**, busca por nome, export CSV e **edição por duplo clique** em qualquer coluna (corrige nome, idade, categoria, tempo etc.).
+2. **`/lista`** — Lista de Atletas com a categoria oficial do CSV; filtros em chips (categoria, gênero) com **↺ limpar filtros**, busca por nome, **ordenação por clique no header** (▲/▼), export CSV e **edição por duplo clique** em qualquer coluna (corrige nome, idade, categoria, tempo etc.).
 3. **`/balizamento`** — filtre por **gênero** (Todos / Feminino / Masculino) e **período** (Manhã / Tarde / Geral): as séries são geradas **automaticamente**; **Atualizar** regenera sob demanda. No ✏️ **modo edição** (canto direito do grid) arraste as linhas para reordenar/mover atletas entre séries e use **✕** para excluir quem faltou.
 4. **`/controle`** — lance os tempos (máscara `00'00`); a medalha é recalculada na hora. **Imprimir Resultados** gera a folha limpa por série.
 5. **`/analise`** — envie CSVs históricos, filtre por atleta/medalha/ano/categoria/gênero e imprima o panorama comparativo.

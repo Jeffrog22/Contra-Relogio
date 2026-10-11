@@ -75,6 +75,8 @@ Regras:
 - **Balizamento roda automático**: `setPeriodo`/`setGeneroBalizamento` (store) regeneram as séries quando há atletas — **qualquer ajuste manual (drag/✕) é descartado** nesse momento; o botão "Atualizar" faz o mesmo sob demanda. `balizar(atletas, periodo, genero)` tem 3º parâmetro (`'todos'` = padão). Persistência do filtro em `generoBalizamento` (`festival-storage`).
 - **Drag & drop do balizamento** (@dnd-kit): modo edição local em `BalizamentoPage`; `TabelaGenerica` aceita `renderLinha(item, celulas)` para renderizar `<tr>` com hooks (`useSortable`). Ids das linhas: `` `${serie}-${atletaId}` ``. `PointerSensor` com `activationConstraint: { distance: 8 }` (clique ≠ arraste). Reordenação dentro da série = `arrayMove`; entre séries = remove + `splice` na posição do `over`; `reordenarSeries` reatribui raias via `reatribuirRaias()`.
 - **Edição inline da Lista**: duplo clique na célula → input/select → Enter/blur confirma (Esc cancela) → `atualizarAtleta(id, campos)` valida/normaliza (idade 1–99, `parseTempo`), recalcula medalha (`'tempo' in campos` — inclusive para limpar) e sincroniza as cópias embutidas em `series`. `atualizarTempoAtleta` virou wrapper de `atualizarAtleta`.
+- **Ordenação da Lista**: clique no header alterna asc/desc com seta ▲/▼ (`cabecalhoOrdenavel`); tempo vazio sempre no fim; categoria ordena pela ordem oficial (`CATEGORIAS.indexOf`); chips de medalha foram removidos (ficam só Categoria e Gênero).
+- **Balizamento sem aviso na UI**: coluna Aviso removida (inclusive do Controle); `serie.aviso` continua no tipo/dados/algoritmo (`balizar()`), só não é mais exibido.
 - **Limites de medalha são estritos no OURO**: faixa "OURO < 28,00" significa que 28,00 exato já é PRATA; 30,00 ainda é PRATA (inclusivo); 30,01 é BRONZE. Mesma lógica nas demais faixas (`src/utils/medalhas.ts`).
 - **Persistência**: Zustand `persist` na chave `festival-storage`; tema também em `festival-tema` (lido em `main.tsx` para evitar flash do dark mode).
 - **Impressão**: chrome com classe `no-print`; áreas de impressão com `print-area` (+ wrapper `hidden print:block`). CSS em `src/index.css` (`@media print`).
@@ -393,6 +395,33 @@ Regras:
 - `README.md`
 - `PRD.md`
 - `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `AGENTS.md`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 11/10/2026 — Ajustes: chips Medalha removidos, ordenação por header, sem coluna Aviso
+
+### O que foi feito
+- **Lista de Atletas**: chips de **Medalha** removidos (linha inteira, state e filtro); ficam só **Categoria**, **Gênero** e busca
+- **Ordenação por clique no header** em todas as colunas: `cabecalhoOrdenavel()` renderiza `<button>` no `th` com seta ▲/▼ (tom primary) quando ativa; 1º clique → asc, 2º → desc, coluna nova → asc; comparadores: nome/professor/nível `localeCompare('pt-BR')`, idade numérico, categoria por índice em `CATEGORIAS`, gênero/horário por ordem fixa, **tempo com vazio sempre no fim** (asc ou desc); `TabelaGenerica.titulo` alargado para `ReactNode`
+- **Balizamento**: coluna **Aviso** removida por completo (import de `Badge`, campo `aviso` da `LinhaTabela`, mapeamento e a coluna); mesma limpeza no `ControlePage` (campo `aviso` das linhas removido); o tipo `Serie.aviso` e o algoritmo `balizar()` seguem intactos — só saiu da UI
+- Docs: CHANGELOG (Changed), AGENTS.md (Contexto + sessão)
+
+### Decisões
+- Chips de medalha removidos a pedido do usuário — medalha já é coluna da tabela e editável; filtro por medalha continua na Análise (histórico)
+- Ordenação é local à página (não no `TabelaGenerica`); `titulo: ReactNode` foi a mudança mínima para customizar o header
+- `serie.aviso` permanece no dado (testes e debug) — decisão explícita do usuário: nenhum aviso na UI
+
+### Arquivos
+- `src/components/ui/TabelaGenerica.tsx`
+- `src/pages/ListaPage.tsx`
+- `src/pages/BalizamentoPage.tsx`
+- `src/pages/ControlePage.tsx`
 - `CHANGELOG.md`
 - `AGENTS.md`
 

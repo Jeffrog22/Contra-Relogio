@@ -20,6 +20,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Botão **"Limpar carregamento"** no CarregarPage: limpa atletas e séries do app (histórico da Análise fica intocado)
 
 ### Changed
+- **Lista de Atletas**: chips de medalha removidos (ficam só Categoria e Gênero); **ordenação por clique no header** — clique simples alterna asc/desc com seta ▲/▼ (tempo vazio sempre no fim; categoria segue a ordem oficial Pré-Mirim→Sênior)
+- **Balizamento**: coluna **Aviso** removida (nenhum aviso exibido na tabela); o campo `aviso` continua nos dados/algoritmo (`serie.aviso`) sem impacto na UI; mesma limpeza no Controle
 - **Menu/sidebar**: "Carregar CSV" → **"Carregar"**; "Listagem" → **"Lista de Atletas"**; H1s atualizados; botão **"Processar"** movido para o card principal de upload (acesso facilitado, desabilitado sem preview)
 - **Nome do app**: "Festival Interno PPt" → **"Festival Interno"** (títulos dos docs, aba do navegador e heading da tela de Controle); ícone do card "Pré-visualização" removido
 - **Categoria do CSV passou a governar tudo**: medalha, balizamento, séries e telas usam a `categoriaOficial` (a regra real é o ano de nascimento, que não vem no CSV — a idade não decide). `categoriaCalculada` fica só como referência interna; exportação de `/lista` agora tem coluna `categoria` única (a oficial); selo de divergência removido
