@@ -1,7 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Atleta, EventoHistorico, PeriodoOpcao, Serie } from '../types';
-import { balizar } from '../utils/balizamento';
+import type {
+  Atleta,
+  EventoHistorico,
+  GeneroOpcao,
+  PeriodoOpcao,
+  Serie,
+} from '../types';
+import { balizar, reatribuirRaias } from '../utils/balizamento';
+import { normalizarCategoria } from '../utils/categorias';
 import { calcularMedalha } from '../utils/medalhas';
 
 export interface ToastState {
@@ -13,6 +20,7 @@ interface AppState {
   atletas: Atleta[];
   series: Serie[];
   periodo: PeriodoOpcao;
+  generoBalizamento: GeneroOpcao;
   historico: EventoHistorico[];
   tema: 'light' | 'dark';
   sidebarAberta: boolean;
@@ -21,8 +29,12 @@ interface AppState {
   processarAtletas: (atletas: Atleta[]) => void;
   limparAtletas: () => void;
   setPeriodo: (periodo: PeriodoOpcao) => void;
-  executarBalizamento: () => void;
+  setGeneroBalizamento: (genero: GeneroOpcao) => void;
+  executarBalizamento: (silencioso?: boolean) => void;
+  atualizarAtleta: (id: string, campos: Partial<Atleta>) => void;
   atualizarTempoAtleta: (id: string, tempo: number | undefined) => void;
+  removerAtletaDaSerie: (serieNumero: number, atletaId: string) => void;
+  reordenarSeries: (novasSeries: Serie[]) => void;
   adicionarHistorico: (eventos: EventoHistorico[]) => void;
   limparHistorico: () => void;
   alternarTema: () => void;
@@ -39,6 +51,7 @@ export const useAppStore = create<AppState>()(
       atletas: [],
       series: [],
       periodo: 'geral',
+      generoBalizamento: 'todos',
       historico: [],
       tema: 'light',
       sidebarAberta: true,
@@ -48,53 +61,88 @@ export const useAppStore = create<AppState>()(
 
       limparAtletas: () => set({ atletas: [], series: [] }),
 
-      setPeriodo: (periodo) => set({ periodo }),
-
-      executarBalizamento: () => {
-        const { atletas, periodo } = get();
-        if (atletas.length === 0) {
-          get().mostrarToast('erro', 'Nenhum atleta carregado. Importe um CSV primeiro.');
-          return;
+      setPeriodo: (periodo) => {
+        set({ periodo });
+        const { atletas, generoBalizamento } = get();
+        if (atletas.length > 0) {
+          set({ series: balizar(atletas, periodo, generoBalizamento) });
         }
-        const series = balizar(atletas, periodo);
-        set({ series });
-        get().mostrarToast(
-          'sucesso',
-          `Balizamento executado: ${series.length} série${series.length === 1 ? '' : 's'}.`,
-        );
       },
 
-      atualizarTempoAtleta: (id, tempo) =>
+      setGeneroBalizamento: (genero) => {
+        set({ generoBalizamento: genero });
+        const { atletas, periodo } = get();
+        if (atletas.length > 0) {
+          set({ series: balizar(atletas, periodo, genero) });
+        }
+      },
+
+      executarBalizamento: (silencioso = false) => {
+        const { atletas, periodo, generoBalizamento } = get();
+        if (atletas.length === 0) {
+          if (!silencioso) {
+            get().mostrarToast('erro', 'Nenhum atleta carregado. Importe um CSV primeiro.');
+          }
+          return;
+        }
+        const series = balizar(atletas, periodo, generoBalizamento);
+        set({ series });
+        if (!silencioso) {
+          get().mostrarToast(
+            'sucesso',
+            `Balizamento atualizado: ${series.length} série${series.length === 1 ? '' : 's'}.`,
+          );
+        }
+      },
+
+      atualizarAtleta: (id, campos) =>
+        set((estado) => {
+          const atual = estado.atletas.find((atleta) => atleta.id === id);
+          if (!atual) return {};
+
+          const atualizado: Atleta = { ...atual, ...campos };
+
+          if (campos.categoriaOficial !== undefined) {
+            const normalizada = normalizarCategoria(String(campos.categoriaOficial));
+            if (!normalizada) return {};
+            atualizado.categoriaOficial = normalizada;
+          }
+
+          if ('tempo' in campos || 'categoriaOficial' in campos || 'genero' in campos) {
+            atualizado.medalha = calcularMedalha(
+              atualizado.tempo,
+              atualizado.categoriaOficial,
+              atualizado.genero,
+            );
+          }
+
+          return {
+            atletas: estado.atletas.map((atleta) => (atleta.id === id ? atualizado : atleta)),
+            series: estado.series.map((serie) => ({
+              ...serie,
+              atletas: serie.atletas.map((item) =>
+                item.atleta.id === id ? { ...item, atleta: atualizado } : item,
+              ),
+            })),
+          };
+        }),
+
+      atualizarTempoAtleta: (id, tempo) => get().atualizarAtleta(id, { tempo }),
+
+      removerAtletaDaSerie: (serieNumero, atletaId) =>
         set((estado) => ({
-          atletas: estado.atletas.map((atleta) =>
-            atleta.id === id
-              ? {
-                  ...atleta,
-                  tempo,
-                  medalha: calcularMedalha(tempo, atleta.categoriaOficial, atleta.genero),
-                }
-              : atleta,
+          series: estado.series.map((serie) =>
+            serie.numero === serieNumero
+              ? reatribuirRaias({
+                  ...serie,
+                  atletas: serie.atletas.filter((item) => item.atleta.id !== atletaId),
+                })
+              : serie,
           ),
-          series: estado.series.map((serie) => ({
-            ...serie,
-            atletas: serie.atletas.map((item) =>
-              item.atleta.id === id
-                ? {
-                    ...item,
-                    atleta: {
-                      ...item.atleta,
-                      tempo,
-                      medalha: calcularMedalha(
-                        tempo,
-                        item.atleta.categoriaOficial,
-                        item.atleta.genero,
-                      ),
-                    },
-                  }
-                : item,
-            ),
-          })),
         })),
+
+      reordenarSeries: (novasSeries) =>
+        set({ series: novasSeries.map((serie) => reatribuirRaias(serie)) }),
 
       adicionarHistorico: (eventos) =>
         set((estado) => ({ historico: [...estado.historico, ...eventos] })),
@@ -127,6 +175,7 @@ export const useAppStore = create<AppState>()(
         atletas: estado.atletas,
         series: estado.series,
         periodo: estado.periodo,
+        generoBalizamento: estado.generoBalizamento,
         historico: estado.historico,
         tema: estado.tema,
         sidebarAberta: estado.sidebarAberta,

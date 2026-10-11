@@ -1,23 +1,191 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import type { Atleta, Categoria, Genero, Medalha, Periodo } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { exportCSV } from '../utils/csv';
-import { formatTempo } from '../utils/medalhas';
+import { formatTempo, parseTempo } from '../utils/medalhas';
+import { CATEGORIAS } from '../utils/categorias';
 import { Card, CardHeading } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Pill } from '../components/ui/Pill';
 import { SearchInput } from '../components/ui/SearchInput';
 import { TabelaGenerica } from '../components/ui/TabelaGenerica';
 
+type Campo =
+  | 'nome'
+  | 'idade'
+  | 'categoriaOficial'
+  | 'genero'
+  | 'periodo'
+  | 'professor'
+  | 'nivel'
+  | 'tempo';
+
+type Edicao = { id: string; campo: Campo };
+
+const MEDALHAS: (Medalha | 'todas')[] = ['todas', 'OURO', 'PRATA', 'BRONZE', 'Sem Tempo'];
+const GENEROS: (Genero | 'todos')[] = ['todos', 'feminino', 'masculino'];
+
+const INPUT_CLASSE =
+  'px-1 py-0.5 text-sm rounded border border-primary-500 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 outline-none';
+
 export function ListaPage() {
   const atletas = useAppStore((estado) => estado.atletas);
+  const atualizarAtleta = useAppStore((estado) => estado.atualizarAtleta);
   const mostrarToast = useAppStore((estado) => estado.mostrarToast);
+
   const [busca, setBusca] = useState('');
+  const [medalha, setMedalha] = useState<Medalha | 'todas'>('todas');
+  const [categoria, setCategoria] = useState<string>('todas');
+  const [genero, setGenero] = useState<Genero | 'todos'>('todos');
+  const [edicao, setEdicao] = useState<Edicao | null>(null);
+  const [rascunho, setRascunho] = useState('');
+
+  const categoriasPresentes = useMemo(() => {
+    const presentes = new Set(atletas.map((atleta) => atleta.categoriaOficial));
+    return CATEGORIAS.filter((cat) => presentes.has(cat));
+  }, [atletas]);
 
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
-    if (!termo) return atletas;
-    return atletas.filter((atleta) => atleta.nome.toLowerCase().includes(termo));
-  }, [atletas, busca]);
+    return atletas.filter((atleta) => {
+      if (termo && !atleta.nome.toLowerCase().includes(termo)) return false;
+      if (medalha !== 'todas' && (atleta.medalha ?? 'Sem Tempo') !== medalha) return false;
+      if (categoria !== 'todas' && atleta.categoriaOficial !== categoria) return false;
+      if (genero !== 'todos' && atleta.genero !== genero) return false;
+      return true;
+    });
+  }, [atletas, busca, medalha, categoria, genero]);
+
+  const filtradoAtivo =
+    busca.trim() !== '' || medalha !== 'todas' || categoria !== 'todas' || genero !== 'todos';
+
+  function limparFiltros() {
+    setBusca('');
+    setMedalha('todas');
+    setCategoria('todas');
+    setGenero('todos');
+  }
+
+  function iniciarEdicao(atleta: Atleta, campo: Campo, valor: string) {
+    setEdicao({ id: atleta.id, campo });
+    setRascunho(valor);
+  }
+
+  function estaEditando(atleta: Atleta, campo: Campo) {
+    return edicao?.id === atleta.id && edicao.campo === campo;
+  }
+
+  function confirmarEdicao(atleta: Atleta) {
+    if (!edicao) return;
+    const { campo } = edicao;
+    const bruto = rascunho;
+
+    if (campo === 'nome') {
+      const nome = bruto.trim();
+      if (!nome) {
+        mostrarToast('erro', 'O nome não pode ficar vazio.');
+        return;
+      }
+      atualizarAtleta(atleta.id, { nome });
+    } else if (campo === 'idade') {
+      const idade = Number(bruto.replace(',', '.'));
+      if (!Number.isInteger(idade) || idade < 1 || idade > 99) {
+        mostrarToast('erro', 'Idade deve ser um número inteiro de 1 a 99.');
+        return;
+      }
+      atualizarAtleta(atleta.id, { idade });
+    } else if (campo === 'tempo') {
+      if (bruto.trim() === '') {
+        atualizarAtleta(atleta.id, { tempo: undefined });
+      } else {
+        const tempo = parseTempo(bruto.trim());
+        if (tempo === undefined) {
+          mostrarToast('erro', 'Tempo inválido. Use segundos (ex.: 34.66 ou 34,66).');
+          return;
+        }
+        atualizarAtleta(atleta.id, { tempo });
+      }
+    } else if (campo === 'professor') {
+      atualizarAtleta(atleta.id, { professor: bruto.trim() });
+    } else if (campo === 'nivel') {
+      atualizarAtleta(atleta.id, { nivel: bruto.trim() });
+    }
+
+    setEdicao(null);
+  }
+
+  function aplicarSelect(atleta: Atleta, campo: Campo, valor: string) {
+    if (campo === 'categoriaOficial') {
+      atualizarAtleta(atleta.id, { categoriaOficial: valor as Categoria });
+    } else if (campo === 'genero') {
+      atualizarAtleta(atleta.id, { genero: valor as Genero });
+    } else if (campo === 'periodo') {
+      atualizarAtleta(atleta.id, { periodo: valor as Periodo });
+    }
+    setEdicao(null);
+  }
+
+  function celulaTexto(atleta: Atleta, campo: Campo, valor: string, valorEdicao?: string) {
+    if (estaEditando(atleta, campo)) {
+      return (
+        <input
+          autoFocus
+          value={rascunho}
+          onChange={(evento) => setRascunho(evento.target.value)}
+          onBlur={() => confirmarEdicao(atleta)}
+          onKeyDown={(evento) => {
+            if (evento.key === 'Enter') confirmarEdicao(atleta);
+            if (evento.key === 'Escape') setEdicao(null);
+          }}
+          className={INPUT_CLASSE}
+        />
+      );
+    }
+    return (
+      <span
+        className="cursor-text"
+        title="Duplo clique para editar"
+        onDoubleClick={() => iniciarEdicao(atleta, campo, valorEdicao ?? valor)}
+      >
+        {valor}
+      </span>
+    );
+  }
+
+  function celulaSelect(
+    atleta: Atleta,
+    campo: Campo,
+    valor: string,
+    opcoes: { valor: string; rotulo: string }[],
+  ) {
+    if (estaEditando(atleta, campo)) {
+      return (
+        <select
+          autoFocus
+          value={rascunho}
+          onChange={(evento) => aplicarSelect(atleta, campo, evento.target.value)}
+          onBlur={() => setEdicao(null)}
+          className={INPUT_CLASSE}
+        >
+          {opcoes.map((opcao) => (
+            <option key={opcao.valor} value={opcao.valor}>
+              {opcao.rotulo}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    return (
+      <span
+        className="cursor-text"
+        title="Duplo clique para editar"
+        onDoubleClick={() => iniciarEdicao(atleta, campo, valor)}
+      >
+        {opcoes.find((opcao) => opcao.valor === valor)?.rotulo ?? valor}
+      </span>
+    );
+  }
 
   function exportar() {
     if (filtrados.length === 0) {
@@ -52,9 +220,11 @@ export function ListaPage() {
     mostrarToast('sucesso', `Exportados ${filtrados.length} atleta(s).`);
   }
 
+  const chipClasse = '!px-3 !py-1 !text-xs';
+
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Listagem geral</h1>
+      <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Lista de Atletas</h1>
 
       <Card>
         <CardHeading icone="🏊" titulo="Atletas cadastrados" />
@@ -69,29 +239,147 @@ export function ListaPage() {
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {filtrados.length} de {atletas.length} atleta(s)
           </span>
+          {filtradoAtivo && (
+            <Button
+              variante="ghost"
+              onClick={limparFiltros}
+              aria-label="Limpar filtros"
+              title="Limpar filtros"
+              className="text-base"
+            >
+              ↺
+            </Button>
+          )}
+        </div>
+
+        <div className="space-y-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              Medalha
+            </span>
+            {MEDALHAS.map((opcao) => (
+              <Pill
+                key={opcao}
+                ativo={medalha === opcao}
+                onClick={() => setMedalha(opcao)}
+                className={chipClasse}
+              >
+                {opcao}
+              </Pill>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              Categoria
+            </span>
+            <Pill
+              ativo={categoria === 'todas'}
+              onClick={() => setCategoria('todas')}
+              className={chipClasse}
+            >
+              Todas
+            </Pill>
+            {categoriasPresentes.map((opcao) => (
+              <Pill
+                key={opcao}
+                ativo={categoria === opcao}
+                onClick={() => setCategoria(opcao)}
+                className={chipClasse}
+              >
+                {opcao}
+              </Pill>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              Gênero
+            </span>
+            {GENEROS.map((opcao) => (
+              <Pill
+                key={opcao}
+                ativo={genero === opcao}
+                onClick={() => setGenero(opcao)}
+                className={chipClasse}
+              >
+                {opcao}
+              </Pill>
+            ))}
+          </div>
         </div>
 
         <TabelaGenerica
           colunas={[
-            { chave: 'nome', titulo: 'Nome', render: (a) => a.nome },
+            {
+              chave: 'nome',
+              titulo: 'Nome',
+              render: (a) => celulaTexto(a, 'nome', a.nome),
+            },
             {
               chave: 'idade',
               titulo: 'Idade',
-              render: (a) => <span className="font-mono tabular-nums">{a.idade}</span>,
+              render: (a) => celulaTexto(a, 'idade', String(a.idade)),
             },
             {
               chave: 'categoria',
               titulo: 'Categoria',
-              render: (a) => <span>{a.categoriaOficial}</span>,
+              render: (a) =>
+                celulaSelect(
+                  a,
+                  'categoriaOficial',
+                  a.categoriaOficial,
+                  CATEGORIAS.map((cat) => ({ valor: cat, rotulo: cat })),
+                ),
             },
-            { chave: 'genero', titulo: 'Gênero', render: (a) => a.genero },
-            { chave: 'horario', titulo: 'Horário', render: (a) => a.periodo },
-            { chave: 'professor', titulo: 'Professor', render: (a) => a.professor },
-            { chave: 'nivel', titulo: 'Nível', render: (a) => a.nivel },
+            {
+              chave: 'genero',
+              titulo: 'Gênero',
+              render: (a) =>
+                celulaSelect(
+                  a,
+                  'genero',
+                  a.genero,
+                  [
+                    { valor: 'feminino', rotulo: 'feminino' },
+                    { valor: 'masculino', rotulo: 'masculino' },
+                  ],
+                ),
+            },
+            {
+              chave: 'horario',
+              titulo: 'Horário',
+              render: (a) =>
+                celulaSelect(
+                  a,
+                  'periodo',
+                  a.periodo,
+                  [
+                    { valor: 'manhã', rotulo: 'manhã' },
+                    { valor: 'tarde', rotulo: 'tarde' },
+                  ],
+                ),
+            },
+            {
+              chave: 'professor',
+              titulo: 'Professor',
+              render: (a) => celulaTexto(a, 'professor', a.professor),
+            },
+            {
+              chave: 'nivel',
+              titulo: 'Nível',
+              render: (a) => celulaTexto(a, 'nivel', a.nivel),
+            },
             {
               chave: 'tempo',
               titulo: 'Tempo',
-              render: (a) => <span className="font-mono tabular-nums">{formatTempo(a.tempo)}</span>,
+              render: (a) =>
+                celulaTexto(
+                  a,
+                  'tempo',
+                  formatTempo(a.tempo),
+                  a.tempo !== undefined ? String(a.tempo) : '',
+                ),
             },
           ]}
           itens={filtrados}
@@ -106,7 +394,7 @@ export function ListaPage() {
                 .
               </>
             ) : (
-              'Nenhum atleta corresponde à busca.'
+              'Nenhum atleta corresponde aos filtros.'
             )
           }
         />

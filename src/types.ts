@@ -1,4 +1,5 @@
 export type Genero = 'feminino' | 'masculino';
+export type GeneroOpcao = Genero | 'todos';
 export type Periodo = 'manhã' | 'tarde';
 export type PeriodoOpcao = Periodo | 'geral';
 export type Medalha = 'OURO' | 'PRATA' | 'BRONZE' | 'Sem Tempo';

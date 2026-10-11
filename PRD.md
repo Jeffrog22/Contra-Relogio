@@ -135,17 +135,21 @@ Replicar **fielmente** o Design System "Fizapp":
 - Botão "Processar" (Primary) persiste em Zustand + `localStorage`
 - Ignorar linhas vazias ou cabeçalho repetido
 
-### RF02 — Listagem Geral (`/lista`)
+### RF02 — Lista de Atletas (`/lista`)
 - Card com heading (ícone 🏊 + título)
 - Tabela com **categoria oficial do CSV**
-- Colunas: `nome | idade | categoria 2026 | gênero | horário | professor | nível`
+- Colunas: `nome | idade | categoria | gênero | horário | professor | nível | tempo`
 - **SearchInput** com lupa para busca por nome
+- **Filtros em chips** (padrão RF05): medalha, categoria, gênero + ícone **↺ limpar filtros**
+- **Edição por duplo clique** em qualquer coluna: altera o registro-base do atleta (raiz), recalcula medalha quando tempo/categoria/gênero mudam e sincroniza as séries
 - Botão "Exportar CSV" (Secondary)
 
 ### RF03 — Balizamento (`/balizamento`)
-- Controles: **Pills** `Manhã | Tarde | Geral` (ativo = Primary)
-- Botão Primary "Executar Balizamento"
-- Resultado em tabela: `série | baliza | professor | nome | tempo | medalha | cód | nível`
+- Controles: **Pills** `Manhã | Tarde | Geral` + **Pills** `Todos | Feminino | Masculino` (filtro em cascata)
+- **Execução automática** ao trocar filtros; botão Primary **"Atualizar"** regenera sob demanda (descarta ajustes manuais)
+- Coluna **Aviso** dedicada (ex.: `redistribuída com grupo vizinho`, `série incompleta`)
+- **Modo edição** (✏️ no topo, canto direito do grid): **drag & drop** (dnd-kit) reordena linhas e move atletas entre séries (raias reatribuídas); botão **✕** exclui do balizamento o atleta que faltou (reaparece ao atualizar)
+- Resultado em tabela: `série | aviso | baliza | professor | nome | tempo | medalha | categoria | nível`
 - Algoritmo conforme §5.5
 
 ### RF04 — Controle (`/controle`)

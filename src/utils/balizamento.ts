@@ -1,4 +1,4 @@
-import type { Atleta, Categoria, Genero, PeriodoOpcao, Serie } from '../types';
+import type { Atleta, Categoria, Genero, GeneroOpcao, PeriodoOpcao, Serie } from '../types';
 import { CATEGORIAS } from './categorias';
 
 interface Grupo {
@@ -133,15 +133,21 @@ function raiasDaSerie(tamanho: number, incompleta: boolean): (1 | 2 | 3 | 4)[] {
   return todas.slice(0, tamanho);
 }
 
-export function balizar(atletas: Atleta[], periodo: PeriodoOpcao): Serie[] {
-  const filtrados =
-    periodo === 'geral' ? atletas : atletas.filter((a) => a.periodo === periodo);
+export function balizar(
+  atletas: Atleta[],
+  periodo: PeriodoOpcao,
+  genero: GeneroOpcao = 'todos',
+): Serie[] {
+  let filtrados = periodo === 'geral' ? atletas : atletas.filter((a) => a.periodo === periodo);
+  if (genero !== 'todos') filtrados = filtrados.filter((a) => a.genero === genero);
 
   const resultado: Serie[] = [];
   let numero = 1;
 
-  for (const genero of ['feminino', 'masculino'] as Genero[]) {
-    const doGenero = filtrados.filter((a) => a.genero === genero);
+  const generos: Genero[] = genero === 'todos' ? ['feminino', 'masculino'] : [genero];
+
+  for (const generoAtual of generos) {
+    const doGenero = filtrados.filter((a) => a.genero === generoAtual);
     if (doGenero.length === 0) continue;
 
     const grupos = agrupar(doGenero);
@@ -161,7 +167,7 @@ export function balizar(atletas: Atleta[], periodo: PeriodoOpcao): Serie[] {
 
       resultado.push({
         numero: numero++,
-        genero,
+        genero: generoAtual,
         categoria: bloco.atletas[0].categoriaOficial,
         nivel: bloco.atletas[0].nivel,
         atletas: bloco.atletas.map((atleta, i) => ({ atleta, raia: raias[i] })),
@@ -171,4 +177,16 @@ export function balizar(atletas: Atleta[], periodo: PeriodoOpcao): Serie[] {
   }
 
   return resultado;
+}
+
+/**
+ * Reatribui as raias de uma série após reordenação/manual:
+ * 4 atletas → [1,2,3,4]; 3 → [2,3,4]; demais → 1..n (máx. 4).
+ */
+export function reatribuirRaias(serie: Serie): Serie {
+  const raias = raiasDaSerie(serie.atletas.length, false);
+  return {
+    ...serie,
+    atletas: serie.atletas.map((item, i) => ({ ...item, raia: raias[i] ?? 1 })),
+  };
 }

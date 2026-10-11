@@ -57,9 +57,7 @@ export function CarregarPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
-        Carregar CSV de atletas
-      </h1>
+      <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Carregar</h1>
 
       <Card>
         <CardHeading icone="📄" titulo="Upload do arquivo" />
@@ -83,6 +81,13 @@ export function CarregarPage() {
               Arquivo: <b>{nomeArquivo}</b> — {atletas.length} atleta(s)
             </span>
           )}
+          <Button
+            onClick={processar}
+            disabled={atletas.length === 0}
+            className="disabled:opacity-50"
+          >
+            Processar
+          </Button>
           <Button
             variante="secondary"
             onClick={limparCarregamento}
@@ -134,9 +139,6 @@ export function CarregarPage() {
             itens={atletas}
             chaveItem={(a) => a.id}
           />
-          <div className="flex justify-end">
-            <Button onClick={processar}>Processar</Button>
-          </div>
         </Card>
       )}
     </div>

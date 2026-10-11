@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Atleta, Serie } from '../types';
-import { balizar, melhorSplit } from './balizamento';
+import { balizar, melhorSplit, reatribuirRaias } from './balizamento';
 
 let sequencia = 0;
 
@@ -179,5 +179,62 @@ describe('balizar — ordem e filtros', () => {
       const ok = [3, 4].includes(serie.atletas.length) || serie.aviso?.includes('incompleta');
       expect(ok).toBe(true);
     }
+  });
+});
+
+describe('balizar — filtro por gênero', () => {
+  it("gênero 'todos' (padrão) mantém feminino e masculino", () => {
+    const atletas = [
+      ...montar(3, { genero: 'feminino' }),
+      ...montar(4, { genero: 'masculino' }),
+    ];
+    const series = balizar(atletas, 'geral', 'todos');
+    expect(series.map((s) => s.genero)).toEqual(['feminino', 'masculino']);
+  });
+
+  it("gênero 'feminino' descarta masculinos e renumera séries", () => {
+    const atletas = [
+      ...montar(3, { genero: 'feminino' }),
+      ...montar(4, { genero: 'masculino' }),
+    ];
+    const series = balizar(atletas, 'geral', 'feminino');
+    expect(tamanhos(series)).toEqual([3]);
+    expect(series.every((s) => s.genero === 'feminino')).toBe(true);
+    expect(series.map((s) => s.numero)).toEqual([1]);
+  });
+
+  it("gênero 'masculino' + período em cascata", () => {
+    const atletas = [
+      ...montar(4, { genero: 'masculino', periodo: 'manhã' }),
+      ...montar(3, { genero: 'masculino', periodo: 'tarde' }),
+      ...montar(4, { genero: 'feminino', periodo: 'manhã' }),
+    ];
+    const series = balizar(atletas, 'manhã', 'masculino');
+    expect(tamanhos(series)).toEqual([4]);
+    expect(series[0].genero).toBe('masculino');
+    expect(series[0].atletas.every((i) => i.atleta.periodo === 'manhã')).toBe(true);
+  });
+});
+
+describe('reatribuirRaias', () => {
+  it('série de 4 vira raias 1,2,3,4', () => {
+    const serie = balizar(montar(4), 'manhã')[0];
+    const corrigida = reatribuirRaias({
+      ...serie,
+      atletas: [...serie.atletas].reverse().map((item) => ({ ...item, raia: 1 as const })),
+    });
+    expect(corrigida.atletas.map((i) => i.raia)).toEqual([1, 2, 3, 4]);
+  });
+
+  it('série de 3 vira raias 2,3,4', () => {
+    const serie = balizar(montar(3), 'manhã')[0];
+    const corrigida = reatribuirRaias(serie);
+    expect(corrigida.atletas.map((i) => i.raia)).toEqual([2, 3, 4]);
+  });
+
+  it('série incompleta de 2 usa 1,2', () => {
+    const serie = balizar(montar(2), 'manhã')[0];
+    const corrigida = reatribuirRaias(serie);
+    expect(corrigida.atletas.map((i) => i.raia)).toEqual([1, 2]);
   });
 });

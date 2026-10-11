@@ -2,8 +2,8 @@ import { NavLink } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 
 const LINKS = [
-  { to: '/carregar', icone: '📄', rotulo: 'Carregar CSV' },
-  { to: '/lista', icone: '🏊', rotulo: 'Listagem' },
+  { to: '/carregar', icone: '📄', rotulo: 'Carregar' },
+  { to: '/lista', icone: '🏊', rotulo: 'Lista de Atletas' },
   { to: '/balizamento', icone: '🏁', rotulo: 'Balizamento' },
   { to: '/controle', icone: '⏱️', rotulo: 'Controle' },
   { to: '/analise', icone: '📊', rotulo: 'Análise' },

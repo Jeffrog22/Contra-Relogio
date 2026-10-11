@@ -72,6 +72,9 @@ Regras:
 - **Categoria do CSV governa tudo**: `categoriaOficial` (coluna `categoria`) rege medalha, balizamento, séries e telas — a regra real do festival é o **ano de nascimento**, que não vem no CSV, então a idade não decide. `categoriaCalculada` (tabela por idade em `categorias.ts`) ficou só como referência interna (não governa nada; o selo de divergência foi removido).
 - **Formato do CSV de entrada**: `nome,idade,categoria,genero,horario,professor,nivel,tempo` (tempo opcional). O PRD/prompt original mencionava `ano_nascimento` — **desatualizado**; o formato atual é o deste README.
 - **Balizamento**: séries só com 3 ou 4 atletas; sobras (1, 2 ou 5 no grupo) se redistribuem com o grupo vizinho do mesmo gênero; casos impossíveis (1, 2 ou 5 atletas isolados) geram série com `aviso` — nunca quebrar o fluxo. Raias: 4→[1,2,3,4], 3→[2,3,4], nunca 5. Algoritmo + testes em `src/utils/balizamento.ts`.
+- **Balizamento roda automático**: `setPeriodo`/`setGeneroBalizamento` (store) regeneram as séries quando há atletas — **qualquer ajuste manual (drag/✕) é descartado** nesse momento; o botão "Atualizar" faz o mesmo sob demanda. `balizar(atletas, periodo, genero)` tem 3º parâmetro (`'todos'` = padão). Persistência do filtro em `generoBalizamento` (`festival-storage`).
+- **Drag & drop do balizamento** (@dnd-kit): modo edição local em `BalizamentoPage`; `TabelaGenerica` aceita `renderLinha(item, celulas)` para renderizar `<tr>` com hooks (`useSortable`). Ids das linhas: `` `${serie}-${atletaId}` ``. `PointerSensor` com `activationConstraint: { distance: 8 }` (clique ≠ arraste). Reordenação dentro da série = `arrayMove`; entre séries = remove + `splice` na posição do `over`; `reordenarSeries` reatribui raias via `reatribuirRaias()`.
+- **Edição inline da Lista**: duplo clique na célula → input/select → Enter/blur confirma (Esc cancela) → `atualizarAtleta(id, campos)` valida/normaliza (idade 1–99, `parseTempo`), recalcula medalha (`'tempo' in campos` — inclusive para limpar) e sincroniza as cópias embutidas em `series`. `atualizarTempoAtleta` virou wrapper de `atualizarAtleta`.
 - **Limites de medalha são estritos no OURO**: faixa "OURO < 28,00" significa que 28,00 exato já é PRATA; 30,00 ainda é PRATA (inclusivo); 30,01 é BRONZE. Mesma lógica nas demais faixas (`src/utils/medalhas.ts`).
 - **Persistência**: Zustand `persist` na chave `festival-storage`; tema também em `festival-tema` (lido em `main.tsx` para evitar flash do dark mode).
 - **Impressão**: chrome com classe `no-print`; áreas de impressão com `print-area` (+ wrapper `hidden print:block`). CSS em `src/index.css` (`@media print`).
@@ -349,6 +352,49 @@ Regras:
 - `AGENTS.md`
 - `src/pages/ControlePage.tsx`
 - `src/pages/CarregarPage.tsx`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 10/10/2026 — Carregar/Lista/Balizamento: filtros em chips, edição inline e modo edição com drag&drop
+
+### O que foi feito
+- **Menu**: sidebar `Carregar CSV`→`Carregar`, `Listagem`→`Lista de Atletas`; H1s alinhados
+- **Carregar**: botão **"Processar"** movido para o card principal (habilitado só com preview válido); removido o duplicado do card de pré-visualização
+- **Lista de Atletas**: chips de filtro no padrão da Análise (**Medalha**, **Categoria** presentes, **Gênero**) + ícone **↺ limpar filtros** (aparece quando ≥1 filtro ativo); **edição por duplo clique** em qualquer coluna — input/select por campo (nome texto, idade 1–99, categoria select das 7, gênero/horário selects, professor/nível texto, tempo via `parseTempo` com aceitação `.`/`,`/`'`), Enter/blur confirma, Esc cancela, erros via toast
+- **Balizamento**: filtro **Gênero** (Todos/Fem/Masc) em cascata com Período; **execução automática** nos setters do store + no mount (só se `series` vazio); botão virou **"Atualizar"**; coluna **Aviso** extraída (fica ao lado de Série, com Badge); **✏️ modo edição** (canto direito do grid): drag&drop de linhas (dnd-kit) dentro e entre séries com raias reatribuídas, **✕** por linha exclui o atleta que faltou (some da série, reaparece ao atualizar)
+- **Store**: `generoBalizamento` (persistido), `atualizarAtleta` (valida/normaliza, recalcula medalha com `'tempo' in campos`, sincroniza cópias em `series`), `removerAtletaDaSerie`, `reordenarSeries`, `executarBalizamento(silencioso)`; `atualizarTempoAtleta` virou wrapper
+- **`balizar()`**: 3º parâmetro `GeneroOpcao` (padrão `'todos'`); novo `reatribuirRaias()` (4→1-4, 3→2-4, outros→1..n)
+- **`TabelaGenerica`**: prop opcional `renderLinha(item, celulas)` — habilita `<tr>` com hooks sem duplicar a tabela
+- Deps novas: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/modifiers` (v9: o modifier correto é `restrictToVerticalAxis`, não `restrictToVerticalElement`)
+- Testes: +6 (3 gênero em cascata, 3 `reatribuirRaias`) → **61 testes, 0 falhas**; `tsc -b` 0 erros; `npm run build` OK
+- Docs: CHANGELOG (Added/Changed), PRD RF01–RF03, README (fluxo), ARCHITECTURE (tabela de rotas)
+
+### Decisões
+- Regeneração automática **descarta ajustes manuais** (drag/✕) a cada mudança de filtro — aceito pelo usuário; "Atualizar" faz o mesmo sob demanda
+- `removerAtletaDaSerie` remove só da série (atleta permanece na base e no Controle); série que fica vazia é filtrada (numeração pode ficar com lacuna — estável para o dia do evento)
+- Filtros da Lista idênticos aos da Análise, exceto **Ano** (não existe em atletas)
+- DnD: `PointerSensor` com `distance: 8` (clique não inicia arraste) — ✕ e clique simples continuam funcionando na linha
+
+### Arquivos
+- `src/components/layout/Sidebar.tsx`
+- `src/components/ui/TabelaGenerica.tsx`
+- `src/pages/CarregarPage.tsx`
+- `src/pages/ListaPage.tsx`
+- `src/pages/BalizamentoPage.tsx`
+- `src/store/useAppStore.ts`
+- `src/types.ts`
+- `src/utils/balizamento.ts`
+- `src/utils/balizamento.test.ts`
+- `package.json` (+@dnd-kit)
+- `README.md`
+- `PRD.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `AGENTS.md`
 
 ### Typecheck
 - Frontend: 0 erros

@@ -12,6 +12,7 @@ interface Props<T> {
   chaveItem: (item: T) => string;
   vazio?: ReactNode;
   className?: string;
+  renderLinha?: (item: T, celulas: ReactNode[]) => ReactNode;
 }
 
 export function TabelaGenerica<T>({
@@ -20,6 +21,7 @@ export function TabelaGenerica<T>({
   chaveItem,
   vazio = 'Nenhum registro encontrado.',
   className = '',
+  renderLinha,
 }: Props<T>) {
   return (
     <div
@@ -49,21 +51,25 @@ export function TabelaGenerica<T>({
               </td>
             </tr>
           ) : (
-            itens.map((item) => (
-              <tr
-                key={chaveItem(item)}
-                className="hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800"
-              >
-                {colunas.map((coluna) => (
-                  <td
-                    key={coluna.chave}
-                    className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap"
-                  >
-                    {coluna.render(item)}
-                  </td>
-                ))}
-              </tr>
-            ))
+            itens.map((item) => {
+              const celulas = colunas.map((coluna) => (
+                <td
+                  key={coluna.chave}
+                  className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap"
+                >
+                  {coluna.render(item)}
+                </td>
+              ));
+              if (renderLinha) return renderLinha(item, celulas);
+              return (
+                <tr
+                  key={chaveItem(item)}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800"
+                >
+                  {celulas}
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>

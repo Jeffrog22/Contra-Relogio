@@ -7,12 +7,20 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 ### Added
+- **Lista de Atletas**: filtros em chips replicando o padrão da Análise (medalha, categoria, gênero) com ícone **↺ limpar filtros**; **edição por duplo clique** em qualquer coluna — altera o registro-base (raiz), recalcula medalha e sincroniza as séries (nome, idade, categoria via select, gênero, horário, professor, nível e tempo)
+- **Balizamento**: filtro de **gênero** (Todos/Feminino/Masculino) em cascata com o período e **execução automática** ao trocar filtros (botão renomeado para **"Atualizar"**)
+- **Balizamento**: coluna **Aviso** dedicada (ex.: `redistribuída com grupo vizinho`) — sai do interior da coluna Série
+- **Balizamento**: ✏️ **modo edição** no topo do grid (canto direito) com **drag & drop** (@dnd-kit) para reordenar linhas e mover atletas entre séries (raias reatribuídas automaticamente) e botão **✕** por linha para excluir do balizamento o atleta que faltou (reaparece ao atualizar)
+- Dependências: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/modifiers`
+- `TabelaGenerica` ganhou a prop opcional `renderLinha` (linhas customizadas com hooks, ex.: `useSortable`)
+- Store: `atualizarAtleta`, `removerAtletaDaSerie`, `reordenarSeries`, `generoBalizamento` (persistido) e `executarBalizamento(silencioso)`; `balizar()` aceita 3º parâmetro de gênero + helper `reatribuirRaias()` (com testes)
 - Indicador discreto da versão no TopBar (logo após o nome do app): texto cinza `text-[10px]` sem fundo (`v{versão}`); versão injetada em build via `define` do Vite a partir da tag Git (`git describe`, fallback `package.json`)
 - `periodoDoHorario()` (`src/utils/periodo.ts`): converte a coluna `horario` em período — aceita `manhã`/`tarde` **ou horário** (`08:45`, `13.05`, `08h45`); corte às 13:00 (antes → manhã, a partir → tarde); instrução na tela de upload atualizada
 - Subclasses/turmas de categoria no CSV (`Mirim II`, `Pré-Mirim II`, `Petiz A`) são normalizadas para a categoria-base em `normalizarCategoria` (match exato ou por remoção de tokens finais; `Master` continua inválido)
 - Botão **"Limpar carregamento"** no CarregarPage: limpa atletas e séries do app (histórico da Análise fica intocado)
 
 ### Changed
+- **Menu/sidebar**: "Carregar CSV" → **"Carregar"**; "Listagem" → **"Lista de Atletas"**; H1s atualizados; botão **"Processar"** movido para o card principal de upload (acesso facilitado, desabilitado sem preview)
 - **Nome do app**: "Festival Interno PPt" → **"Festival Interno"** (títulos dos docs, aba do navegador e heading da tela de Controle); ícone do card "Pré-visualização" removido
 - **Categoria do CSV passou a governar tudo**: medalha, balizamento, séries e telas usam a `categoriaOficial` (a regra real é o ano de nascimento, que não vem no CSV — a idade não decide). `categoriaCalculada` fica só como referência interna; exportação de `/lista` agora tem coluna `categoria` única (a oficial); selo de divergência removido
 
