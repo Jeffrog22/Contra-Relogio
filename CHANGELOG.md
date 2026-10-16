@@ -7,6 +7,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 ### Added
+- **Lista de Atletas**: botão **"+ Adicionar Atleta"** — modal com formulário manual (nome, idade, categoria, gênero, horário, professor, nível e tempo opcional) que insere na base sem CSV; bloqueia nome duplicado (case-insensitive), calcula `categoriaCalculada`/medalha e regenera as séries automaticamente quando já existem; primeiro uso real do componente `Modal`
+- Store: `adicionarAtleta` (retorna `false` em categoria inválida ou duplicado; gera id, recalcula medalha e re-executa `balizar` se houver séries)
 - **Lista de Atletas**: filtros em chips replicando o padrão da Análise (medalha, categoria, gênero) com ícone **↺ limpar filtros**; **edição por duplo clique** em qualquer coluna — altera o registro-base (raiz), recalcula medalha e sincroniza as séries (nome, idade, categoria via select, gênero, horário, professor, nível e tempo)
 - **Balizamento**: filtro de **gênero** (Todos/Feminino/Masculino) em cascata com o período e **execução automática** ao trocar filtros (botão renomeado para **"Atualizar"**)
 - **Balizamento**: coluna **Aviso** dedicada (ex.: `redistribuída com grupo vizinho`) — sai do interior da coluna Série

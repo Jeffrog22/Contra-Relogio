@@ -7,6 +7,8 @@ import { formatTempo, parseTempo } from '../utils/medalhas';
 import { CATEGORIAS } from '../utils/categorias';
 import { Card, CardHeading } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Modal } from '../components/ui/Modal';
 import { Pill } from '../components/ui/Pill';
 import { SearchInput } from '../components/ui/SearchInput';
 import { TabelaGenerica } from '../components/ui/TabelaGenerica';
@@ -32,9 +34,35 @@ const ORDEM_PERIODOS: Periodo[] = ['manhã', 'tarde'];
 const INPUT_CLASSE =
   'px-1 py-0.5 text-sm rounded border border-primary-500 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 outline-none';
 
+interface FormAtleta {
+  nome: string;
+  idade: string;
+  categoria: Categoria;
+  genero: Genero;
+  periodo: Periodo;
+  professor: string;
+  nivel: string;
+  tempo: string;
+}
+
+const FORM_VAZIO: FormAtleta = {
+  nome: '',
+  idade: '',
+  categoria: 'Mirim',
+  genero: 'feminino',
+  periodo: 'manhã',
+  professor: '',
+  nivel: '',
+  tempo: '',
+};
+
+const SELECT_CLASSE =
+  'w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500';
+
 export function ListaPage() {
   const atletas = useAppStore((estado) => estado.atletas);
   const atualizarAtleta = useAppStore((estado) => estado.atualizarAtleta);
+  const adicionarAtleta = useAppStore((estado) => estado.adicionarAtleta);
   const mostrarToast = useAppStore((estado) => estado.mostrarToast);
 
   const [busca, setBusca] = useState('');
@@ -43,6 +71,55 @@ export function ListaPage() {
   const [ordenacao, setOrdenacao] = useState<Ordenacao>({ campo: 'nome', direcao: 'asc' });
   const [edicao, setEdicao] = useState<Edicao | null>(null);
   const [rascunho, setRascunho] = useState('');
+  const [modalAberto, setModalAberto] = useState(false);
+  const [form, setForm] = useState<FormAtleta>(FORM_VAZIO);
+
+  function alterarForm<K extends keyof FormAtleta>(campo: K, valor: FormAtleta[K]) {
+    setForm((atual) => ({ ...atual, [campo]: valor }));
+  }
+
+  function abrirModal() {
+    setForm(FORM_VAZIO);
+    setModalAberto(true);
+  }
+
+  function confirmarAdicao() {
+    const nome = form.nome.trim();
+    if (!nome) {
+      mostrarToast('erro', 'O nome não pode ficar vazio.');
+      return;
+    }
+
+    const idade = Number(form.idade.replace(',', '.'));
+    if (!Number.isInteger(idade) || idade < 1 || idade > 99) {
+      mostrarToast('erro', 'Idade deve ser um número inteiro de 1 a 99.');
+      return;
+    }
+
+    let tempo: number | undefined;
+    if (form.tempo.trim() !== '') {
+      tempo = parseTempo(form.tempo.trim());
+      if (tempo === undefined) {
+        mostrarToast('erro', 'Tempo inválido. Use segundos (ex.: 34.66 ou 34,66).');
+        return;
+      }
+    }
+
+    const adicionado = adicionarAtleta({
+      nome,
+      idade,
+      categoriaOficial: form.categoria,
+      genero: form.genero,
+      periodo: form.periodo,
+      professor: form.professor.trim(),
+      nivel: form.nivel.trim(),
+      tempo,
+    });
+    if (!adicionado) return;
+
+    setModalAberto(false);
+    mostrarToast('sucesso', `Atleta "${nome}" adicionado.`);
+  }
 
   const categoriasPresentes = useMemo(() => {
     const presentes = new Set(atletas.map((atleta) => atleta.categoriaOficial));
@@ -290,6 +367,7 @@ export function ListaPage() {
           <div className="w-full max-w-xs">
             <SearchInput valor={busca} onChange={setBusca} placeholder="Buscar por nome..." />
           </div>
+          <Button onClick={abrirModal}>+ Adicionar Atleta</Button>
           <Button variante="secondary" onClick={exportar}>
             Exportar CSV
           </Button>
@@ -440,6 +518,158 @@ export function ListaPage() {
           }
         />
       </Card>
+
+      {modalAberto && (
+        <Modal
+          titulo="Adicionar atleta"
+          onClose={() => setModalAberto(false)}
+          footer={
+            <>
+              <Button variante="secondary" onClick={() => setModalAberto(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={confirmarAdicao}>Adicionar</Button>
+            </>
+          }
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label
+                htmlFor="novo-nome"
+                className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1"
+              >
+                Nome
+              </label>
+              <Input
+                id="novo-nome"
+                value={form.nome}
+                onChange={(evento) => alterarForm('nome', evento.target.value)}
+                placeholder="Nome completo"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="novo-idade"
+                className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1"
+              >
+                Idade
+              </label>
+              <Input
+                id="novo-idade"
+                type="number"
+                min={1}
+                max={99}
+                value={form.idade}
+                onChange={(evento) => alterarForm('idade', evento.target.value)}
+                placeholder="ex.: 10"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="novo-categoria"
+                className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1"
+              >
+                Categoria
+              </label>
+              <select
+                id="novo-categoria"
+                value={form.categoria}
+                onChange={(evento) => alterarForm('categoria', evento.target.value as Categoria)}
+                className={SELECT_CLASSE}
+              >
+                {CATEGORIAS.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="novo-genero"
+                className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1"
+              >
+                Gênero
+              </label>
+              <select
+                id="novo-genero"
+                value={form.genero}
+                onChange={(evento) => alterarForm('genero', evento.target.value as Genero)}
+                className={SELECT_CLASSE}
+              >
+                <option value="feminino">feminino</option>
+                <option value="masculino">masculino</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="novo-periodo"
+                className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1"
+              >
+                Horário
+              </label>
+              <select
+                id="novo-periodo"
+                value={form.periodo}
+                onChange={(evento) => alterarForm('periodo', evento.target.value as Periodo)}
+                className={SELECT_CLASSE}
+              >
+                <option value="manhã">manhã</option>
+                <option value="tarde">tarde</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="novo-professor"
+                className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1"
+              >
+                Professor
+              </label>
+              <Input
+                id="novo-professor"
+                value={form.professor}
+                onChange={(evento) => alterarForm('professor', evento.target.value)}
+                placeholder="ex.: Prof. Ana"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="novo-nivel"
+                className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1"
+              >
+                Nível
+              </label>
+              <Input
+                id="novo-nivel"
+                value={form.nivel}
+                onChange={(evento) => alterarForm('nivel', evento.target.value)}
+                placeholder="ex.: iniciante"
+              />
+            </div>
+
+            <div className="col-span-2">
+              <label
+                htmlFor="novo-tempo"
+                className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1"
+              >
+                Tempo (opcional)
+              </label>
+              <Input
+                id="novo-tempo"
+                value={form.tempo}
+                onChange={(evento) => alterarForm('tempo', evento.target.value)}
+                placeholder="ex.: 34.66"
+              />
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

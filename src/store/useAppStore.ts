@@ -8,8 +8,9 @@ import type {
   Serie,
 } from '../types';
 import { balizar, reatribuirRaias } from '../utils/balizamento';
-import { normalizarCategoria } from '../utils/categorias';
+import { categoriaPorIdade, normalizarCategoria } from '../utils/categorias';
 import { calcularMedalha } from '../utils/medalhas';
+import { gerarId } from '../utils/csv';
 
 export interface ToastState {
   tipo: 'sucesso' | 'erro';
@@ -28,6 +29,9 @@ interface AppState {
 
   processarAtletas: (atletas: Atleta[]) => void;
   limparAtletas: () => void;
+  adicionarAtleta: (
+    dados: Omit<Atleta, 'id' | 'categoriaCalculada' | 'medalha'>,
+  ) => boolean;
   setPeriodo: (periodo: PeriodoOpcao) => void;
   setGeneroBalizamento: (genero: GeneroOpcao) => void;
   executarBalizamento: (silencioso?: boolean) => void;
@@ -60,6 +64,42 @@ export const useAppStore = create<AppState>()(
       processarAtletas: (atletas) => set({ atletas, series: [] }),
 
       limparAtletas: () => set({ atletas: [], series: [] }),
+
+      adicionarAtleta: (dados) => {
+        const estado = get();
+        const nome = dados.nome.trim();
+        const normalizada = normalizarCategoria(String(dados.categoriaOficial));
+        if (!normalizada) {
+          get().mostrarToast('erro', 'Categoria inválida.');
+          return false;
+        }
+
+        const duplicado = estado.atletas.some(
+          (atleta) => atleta.nome.trim().toLowerCase() === nome.toLowerCase(),
+        );
+        if (duplicado) {
+          get().mostrarToast('erro', `Já existe um atleta chamado "${nome}".`);
+          return false;
+        }
+
+        const novo: Atleta = {
+          ...dados,
+          id: gerarId(),
+          nome,
+          categoriaOficial: normalizada,
+          categoriaCalculada: categoriaPorIdade(dados.idade),
+          medalha: calcularMedalha(dados.tempo, normalizada, dados.genero),
+        };
+
+        const atletas = [...estado.atletas, novo];
+        const series =
+          estado.series.length > 0
+            ? balizar(atletas, estado.periodo, estado.generoBalizamento)
+            : estado.series;
+
+        set({ atletas, series });
+        return true;
+      },
 
       setPeriodo: (periodo) => {
         set({ periodo });

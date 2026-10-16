@@ -88,6 +88,7 @@ Regras:
 - **Categoria com subclasses**: `normalizarCategoria` aceita sufixos de turma (`Mirim II`, `Petiz A`, `Infantil Azul`) e normaliza para a categoria-base (match exato ou remoção progressiva de tokens finais, nunca substring — `Mirinho` continua inválido). A subdivisão **não é persistida**: `categoriaOficial` guarda só a base; balizamento/agrupamento usam `categoriaCalculada` (idade) — nunca a oficial.
 - **Typo perigoso já acontecido**: `obrigigatoria` vs `obrigatoria` em interpolação de template string causou `ReferenceError` silencioso só no runtime dos testes — revisar identificadores com acento/typos ao revisar diffs.
 - **Repo usa o kit de documentação**: hook `.githooks/post-commit` cria tags SemVer; sessões registradas via `scripts/nova-sessao.ps1`; nunca criar SESSION.md.
+- **Adição manual de atleta**: `adicionarAtleta(dados)` no store retorna `boolean` (`false` = categoria inválida ou nome duplicado case-insensitive — toast emitido pelo próprio store); monta o `Atleta` completo (`gerarId`, `categoriaPorIdade`, `calcularMedalha`) e re-executa `balizar()` **só se já existirem séries** (mesmo descarte de ajustes manuais dos filtros). `Modal` (DS) teve o primeiro uso real aqui.
 
 ---
 
@@ -422,6 +423,33 @@ Regras:
 - `src/pages/ListaPage.tsx`
 - `src/pages/BalizamentoPage.tsx`
 - `src/pages/ControlePage.tsx`
+- `CHANGELOG.md`
+- `AGENTS.md`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 16/10/2026 — Add Atleta manual na Lista de Atletas
+
+### O que foi feito
+- **Store**: novo action `adicionarAtleta(dados: Omit<Atleta, 'id'|'categoriaCalculada'|'medalha'>): boolean` — valida `normalizarCategoria`, **bloqueia nome duplicado** (trim + case-insensitive, toast de erro e retorna `false`), monta o `Atleta` (`gerarId()`, `categoriaPorIdade`, `calcularMedalha`) e **regenera séries via `balizar()` somente se já existirem** (usa `periodo`/`generoBalizamento` atuais); com séries vazias mantém `series: []`
+- **Lista de Atletas**: botão **"+ Adicionar Atleta"** (primary) na toolbar antes de "Exportar CSV" → abre **`Modal`** (primeiro uso real do componente) com formulário grid 2 colunas: Nome (full), Idade (number 1–99), Categoria (select 7), Gênero, Horário (manhã/tarde), Professor, Nível, Tempo (opcional, full); footer Cancelar/Adicionar; labels com `htmlFor` + classe uppercase do DS; selects com `SELECT_CLASSE` local espelhando o `Input`
+- Validação no submit (mesmas regras da edição inline): nome não vazio, idade inteira 1–99, tempo via `parseTempo` (não-vazio inválido → erro); erros de duplicado/categoria (retornados pelo store) mantêm o modal aberto; sucesso fecha, reseta form (`FORM_VAZIO`) e toast `Atleta "X" adicionado.`
+- Verificação: `npx tsc -b --force` 0 erros; **61 testes, 0 falhas**; `npm run build` OK
+- Docs: CHANGELOG (Added), AGENTS.md (Contexto Crítico + esta sessão)
+
+### Decisões
+- **Bloquear duplicado** (decisão do usuário): mesmo nome (ignorando caixa/espaços) → erro, não adiciona; checagem vive no store (única fonte da base)
+- **Regenerar séries automático** (decisão do usuário): consistente com os filtros período/gênero — descarta ajustes manuais (drag/✕) já existentes, mesmo trade-off já aceito
+- `tempo` é opcional no form (mesmo CSV); vazio → `undefined` → medalha `Sem Tempo`
+- Form começa com defaults `categoria: 'Mirim'`, `genero: 'feminino'`, `periodo: 'manhã'`
+
+### Arquivos
+- `src/store/useAppStore.ts`
+- `src/pages/ListaPage.tsx`
 - `CHANGELOG.md`
 - `AGENTS.md`
 
