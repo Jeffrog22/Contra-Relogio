@@ -24,7 +24,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ### Added
 - **Lista Apresentação** (nova tela `/lista-apresentacao`): mesmo layout/grid/lógica da Lista Festival, com filtros por chips — Nível (Todos | Iniciação A | Iniciação B), Gênero (Todos | feminino | masculino) e Tipo (Todos | Crawl c/ prancha | Crawl s/ prancha); busca, ordenação por header, edição inline (duplo clique) e export CSV (`listagem-apresentacao.csv`); modal "Adicionar atleta" com campo Tipo
 - Campo opcional `tipo` (`'Crawl c/ prancha' | 'Crawl s/ prancha'`) no `Atleta` — usado apenas como filtro na Lista Apresentação (não afeta medalha nem balizamento)
-- Ícone SVG customizado (baseado na ilustração da raiz, `swimming-svgrepo-com (1).svg`, com stroke `currentColor`) no item de menu Lista Apresentação; `icone` do `LINKS` agora aceita `ReactNode`
+- Ícone SVG customizado (baseado na ilustração da raiz, `swimming-svgrepo-com (1).svg`, com stroke `currentColor` + azul `#3B82F6` na touca) no item de menu Lista Apresentação; `icone` do `LINKS` agora aceita `ReactNode`
 
 ### Changed
 - **Lista de Atletas**: chips de medalha removidos (ficam só Categoria e Gênero); **ordenação por clique no header** — clique simples alterna asc/desc com seta ▲/▼ (tempo vazio sempre no fim; categoria segue a ordem oficial Pré-Mirim→Sênior)

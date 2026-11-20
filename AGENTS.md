@@ -509,3 +509,30 @@ Regras:
 ### Typecheck
 - Frontend: 0 erros
 - Backend: 0 erros
+
+---
+
+## Sessão: 20/10/2026 — Melhora ícone SVG da Lista Apresentação (cabeça+touca+óculos, duas cores)
+
+### O que foi feito
+- Substituiu o SVG anterior por um ícone melhorado baseado na ilustração da raiz (`swimming-svgrepo-com (1).svg`), simplificado para ícone de menu:
+  - **Cabeça**: círculo (`currentColor`)
+  - **Touca**: arco superior em azul (`#3B82F6`) — cor adicional junto com `currentColor`
+  - **Óculos**: dois círculos pequenos + ponte (`currentColor`)
+  - **Sem corpo** (apenas cabeça e óculos)
+  - `viewBox="0 0 24 24"`, `strokeLinecap="round"`, `strokeLinejoin="round"`, sem `fill`
+- Item de menu `Lista Apresentação` exibe o SVG customizado no `Sidebar.tsx`
+- Verificação: `npx tsc -b --force` 0 erros; **61 testes, 0 falhas**; `npm run build` OK
+
+### Decisões
+- Duas cores: `currentColor` (herda cor do tema light/dark) + azul `#3B82F6` na touca (tema de natação/água)
+- `CardHeading.icone` aceita apenas `string`, então a Lista Apresentação mantém o emoji `🎤` no título da página; o SVG fica só no item de menu do Sidebar
+
+### Arquivos
+- `src/components/layout/Sidebar.tsx`
+- `AGENTS.md`
+- `CHANGELOG.md`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
