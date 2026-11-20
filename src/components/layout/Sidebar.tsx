@@ -8,8 +8,8 @@ const CARREGAR_SUBITENS = [
 ];
 
 const LINKS = [
-  { to: '/lista', icone: '🏊', rotulo: 'Lista Festival' },
   { to: '/lista-apresentacao', icone: '🤿', rotulo: 'Lista Apresentação' },
+  { to: '/lista', icone: '🏊', rotulo: 'Lista Festival' },
   { to: '/balizamento', icone: '🏁', rotulo: 'Balizamento' },
   { to: '/controle', icone: '⏱️', rotulo: 'Controle' },
   { to: '/analise', icone: '📊', rotulo: 'Análise' },

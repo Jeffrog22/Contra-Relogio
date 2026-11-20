@@ -17,8 +17,31 @@ export interface ToastState {
   mensagem: string;
 }
 
+export type DestinoLista = 'festival' | 'apresentacao';
+
+function aplicarAtualizacao(atual: Atleta, campos: Partial<Atleta>): Atleta | null {
+  const atualizado: Atleta = { ...atual, ...campos };
+
+  if (campos.categoriaOficial !== undefined) {
+    const normalizada = normalizarCategoria(String(campos.categoriaOficial));
+    if (!normalizada) return null;
+    atualizado.categoriaOficial = normalizada;
+  }
+
+  if ('tempo' in campos || 'categoriaOficial' in campos || 'genero' in campos) {
+    atualizado.medalha = calcularMedalha(
+      atualizado.tempo,
+      atualizado.categoriaOficial,
+      atualizado.genero,
+    );
+  }
+
+  return atualizado;
+}
+
 interface AppState {
   atletas: Atleta[];
+  atletasApresentacao: Atleta[];
   series: Serie[];
   periodo: PeriodoOpcao;
   generoBalizamento: GeneroOpcao;
@@ -28,9 +51,11 @@ interface AppState {
   toast: ToastState | null;
 
   processarAtletas: (atletas: Atleta[]) => void;
-  limparAtletas: () => void;
+  processarApresentacao: (atletas: Atleta[]) => void;
+  limparAtletas: (destino?: DestinoLista) => void;
   adicionarAtleta: (
     dados: Omit<Atleta, 'id' | 'categoriaCalculada' | 'medalha'>,
+    destino?: DestinoLista,
   ) => boolean;
   setPeriodo: (periodo: PeriodoOpcao) => void;
   setGeneroBalizamento: (genero: GeneroOpcao) => void;
@@ -53,6 +78,7 @@ export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       atletas: [],
+      atletasApresentacao: [],
       series: [],
       periodo: 'geral',
       generoBalizamento: 'todos',
@@ -63,9 +89,14 @@ export const useAppStore = create<AppState>()(
 
       processarAtletas: (atletas) => set({ atletas, series: [] }),
 
-      limparAtletas: () => set({ atletas: [], series: [] }),
+      processarApresentacao: (atletas) => set({ atletasApresentacao: atletas }),
 
-      adicionarAtleta: (dados) => {
+      limparAtletas: (destino = 'festival') =>
+        destino === 'festival'
+          ? set({ atletas: [], series: [] })
+          : set({ atletasApresentacao: [] }),
+
+      adicionarAtleta: (dados, destino = 'festival') => {
         const estado = get();
         const nome = dados.nome.trim();
         const normalizada = normalizarCategoria(String(dados.categoriaOficial));
@@ -74,7 +105,8 @@ export const useAppStore = create<AppState>()(
           return false;
         }
 
-        const duplicado = estado.atletas.some(
+        const base = destino === 'apresentacao' ? estado.atletasApresentacao : estado.atletas;
+        const duplicado = base.some(
           (atleta) => atleta.nome.trim().toLowerCase() === nome.toLowerCase(),
         );
         if (duplicado) {
@@ -90,6 +122,11 @@ export const useAppStore = create<AppState>()(
           categoriaCalculada: categoriaPorIdade(dados.idade),
           medalha: calcularMedalha(dados.tempo, normalizada, dados.genero),
         };
+
+        if (destino === 'apresentacao') {
+          set({ atletasApresentacao: [...estado.atletasApresentacao, novo] });
+          return true;
+        }
 
         const atletas = [...estado.atletas, novo];
         const series =
@@ -138,23 +175,22 @@ export const useAppStore = create<AppState>()(
       atualizarAtleta: (id, campos) =>
         set((estado) => {
           const atual = estado.atletas.find((atleta) => atleta.id === id);
-          if (!atual) return {};
-
-          const atualizado: Atleta = { ...atual, ...campos };
-
-          if (campos.categoriaOficial !== undefined) {
-            const normalizada = normalizarCategoria(String(campos.categoriaOficial));
-            if (!normalizada) return {};
-            atualizado.categoriaOficial = normalizada;
-          }
-
-          if ('tempo' in campos || 'categoriaOficial' in campos || 'genero' in campos) {
-            atualizado.medalha = calcularMedalha(
-              atualizado.tempo,
-              atualizado.categoriaOficial,
-              atualizado.genero,
+          if (!atual) {
+            const atualApresentacao = estado.atletasApresentacao.find(
+              (atleta) => atleta.id === id,
             );
+            if (!atualApresentacao) return {};
+            const atualizadoApresentacao = aplicarAtualizacao(atualApresentacao, campos);
+            if (!atualizadoApresentacao) return {};
+            return {
+              atletasApresentacao: estado.atletasApresentacao.map((atleta) =>
+                atleta.id === id ? atualizadoApresentacao : atleta,
+              ),
+            };
           }
+
+          const atualizado = aplicarAtualizacao(atual, campos);
+          if (!atualizado) return {};
 
           return {
             atletas: estado.atletas.map((atleta) => (atleta.id === id ? atualizado : atleta)),
@@ -213,6 +249,7 @@ export const useAppStore = create<AppState>()(
       name: 'festival-storage',
       partialize: (estado) => ({
         atletas: estado.atletas,
+        atletasApresentacao: estado.atletasApresentacao,
         series: estado.series,
         periodo: estado.periodo,
         generoBalizamento: estado.generoBalizamento,

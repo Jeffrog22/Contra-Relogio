@@ -20,6 +20,9 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - `periodoDoHorario()` (`src/utils/periodo.ts`): converte a coluna `horario` em período — aceita `manhã`/`tarde` **ou horário** (`08:45`, `13.05`, `08h45`); corte às 13:00 (antes → manhã, a partir → tarde); instrução na tela de upload atualizada
 - Subclasses/turmas de categoria no CSV (`Mirim II`, `Pré-Mirim II`, `Petiz A`) são normalizadas para a categoria-base em `normalizarCategoria` (match exato ou por remoção de tokens finais; `Master` continua inválido)
 - Botão **"Limpar carregamento"** no CarregarPage: limpa atletas e séries do app (histórico da Análise fica intocado)
+- **Bases independentes Festival × Apresentação**: store ganhou `atletasApresentacao` (persistido em `festival-storage`) — Upload Festival alimenta a Lista Festival (`processarAtletas`) e Upload Apresentação alimenta a Lista Apresentação (`processarApresentacao`); um upload não sobrescreve mais o outro nem zera as séries indevidamente
+- Coluna opcional **`tipo`** no CSV de atletas (aceita `Crawl c/ prancha` / `Crawl s/ prancha` com caixa e variações toleradas; vazio/ausente → `undefined`, inválido → erro de linha) — lida pelos dois uploads
+- **Lista Apresentação**: chip filtro **Período** (Todos | manhã | tarde), junto aos filtros de Nível, Gênero e Tipo
 
 ### Added
 - **Lista Apresentação** (nova tela `/lista-apresentacao`): mesmo layout/grid/lógica da Lista Festival, com filtros por chips — Nível (Todos | Iniciação A | Iniciação B), Gênero (Todos | feminino | masculino) e Tipo (Todos | Crawl c/ prancha | Crawl s/ prancha); busca, ordenação por header, edição inline (duplo clique) e export CSV (`listagem-apresentacao.csv`); modal "Adicionar atleta" com campo Tipo
@@ -30,6 +33,9 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Changed
 - **Carregar**: CardHeading 'Upload do arquivo' → 'Upload Festival'; removeu o botão 'Processar'; CSV processado automaticamente quando válido (sem erros e com atletas), exibindo toast de erro se houver falhas de validação; navega para /lista após o sucesso
+- **Menu**: ordem alterada — **Lista Apresentação** antes de **Lista Festival**
+- **Lista Apresentação**: coluna **Tempo** substituída por **Tipo** (select inline com as duas opções; exportação passa a ter `tipo` no lugar de `tempo`, mantendo `medalha`); estado vazio agora aponta para `/upload-apresentacao`
+- Store: `adicionarAtleta(dados, destino)` e `limparAtletas(destino)` parametrizados (padrão `festival`) — duplicado validado por lista, modal da Lista Apresentação grava na base da Apresentação; `atualizarAtleta` localiza o atleta na lista correta (cópias em `series` só quando é da base Festival)
 
 ### Changed
 - **Lista de Atletas**: chips de medalha removidos (ficam só Categoria e Gênero); **ordenação por clique no header** — clique simples alterna asc/desc com seta ▲/▼ (tempo vazio sempre no fim; categoria segue a ordem oficial Pré-Mirim→Sênior)

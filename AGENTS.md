@@ -70,7 +70,8 @@ Regras:
 - **Tailwind é 3.4 fixado** (não 4.x): o Design System exige `tailwind.config.js` com `darkMode: 'class'` + keyframes `shake`. Não migrar para Tailwind 4 sem refatorar o setup.
 - **Design System tem fonte da verdade**: `identidade visual Fizapp.txt`. Nenhuma cor fora da paleta `primary`/semânticas; sempre variantes `dark:`; `bg-primary-600` (nunca `bg-blue-600`) para ação primária.
 - **Categoria do CSV governa tudo**: `categoriaOficial` (coluna `categoria`) rege medalha, balizamento, séries e telas — a regra real do festival é o **ano de nascimento**, que não vem no CSV, então a idade não decide. `categoriaCalculada` (tabela por idade em `categorias.ts`) ficou só como referência interna (não governa nada; o selo de divergência foi removido).
-- **Formato do CSV de entrada**: `nome,idade,categoria,genero,horario,professor,nivel,tempo` (tempo opcional). O PRD/prompt original mencionava `ano_nascimento` — **desatualizado**; o formato atual é o deste README.
+- **Formato do CSV de entrada**: `nome,idade,categoria,genero,horario,professor,nivel,tempo` (tempo opcional) + coluna opcional **`tipo`** (`Crawl c/ prancha` | `Crawl s/ prancha`, aceita caixa/variações; vazio → `undefined`, inválido → erro de linha). O PRD/prompt original mencionava `ano_nascimento` — **desatualizado**; o formato atual é o deste README.
+- **Duas bases independentes no store**: `atletas` = **Festival** (única que alimenta balizamento/controle/análise) e `atletasApresentacao` = **Apresentação** (só a Lista Apresentação). Upload Festival → `processarAtletas` (zera `series`); Upload Apresentação → `processarApresentacao` (não toca em `series`). `adicionarAtleta(dados, destino)` e `limparAtletas(destino)` aceitam `'festival' | 'apresentacao'` (padrão festival; duplicado validado **por lista**); `atualizarAtleta` localiza o id em qual lista existe (cópias em `series` só se for festival). Ambas persistidas em `festival-storage`.
 - **Balizamento**: séries só com 3 ou 4 atletas; sobras (1, 2 ou 5 no grupo) se redistribuem com o grupo vizinho do mesmo gênero; casos impossíveis (1, 2 ou 5 atletas isolados) geram série com `aviso` — nunca quebrar o fluxo. Raias: 4→[1,2,3,4], 3→[2,3,4], nunca 5. Algoritmo + testes em `src/utils/balizamento.ts`.
 - **Balizamento roda automático**: `setPeriodo`/`setGeneroBalizamento` (store) regeneram as séries quando há atletas — **qualquer ajuste manual (drag/✕) é descartado** nesse momento; o botão "Atualizar" faz o mesmo sob demanda. `balizar(atletas, periodo, genero)` tem 3º parâmetro (`'todos'` = padão). Persistência do filtro em `generoBalizamento` (`festival-storage`).
 - **Drag & drop do balizamento** (@dnd-kit): modo edição local em `BalizamentoPage`; `TabelaGenerica` aceita `renderLinha(item, celulas)` para renderizar `<tr>` com hooks (`useSortable`). Ids das linhas: `` `${serie}-${atletaId}` ``. `PointerSensor` com `activationConstraint: { distance: 8 }` (clique ≠ arraste). Reordenação dentro da série = `arrayMove`; entre séries = remove + `splice` na posição do `over`; `reordenarSeries` reatribui raias via `reatribuirRaias()`.
@@ -641,6 +642,41 @@ pm run build OK
 - src/components/layout/Sidebar.tsx
 - AGENTS.md
 - CHANGELOG.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 20/10/2026 — Listas independentes (Festival x Apresentação), coluna Tipo e filtro Período
+
+### O que foi feito
+- **Store**: novo estado `atletasApresentacao` (persistido em `festival-storage`); nova action `processarApresentacao(atletas)` (não zera `series`); `limparAtletas(destino?)` e `adicionarAtleta(dados, destino?)` parametrizados com `'festival' | 'apresentacao'` (padrão festival; duplicado validado por lista; adicionar em apresentação não roda `balizar()`); `atualizarAtleta` localiza o atleta em qual lista existe (helper `aplicarAtualizacao` compartilhado; cópias em `series` sincronizadas só para a base festival)
+- **CSV**: coluna opcional `tipo` lida em `parseCSVAtletas` via `normalizarTipo()` (aceita `Crawl c/ prancha`/`Crawl s/ prancha` com caixa e variações tipo `crawl com prancha`; vazio/ausente → `undefined`; inválido → erro de linha com sugestão) — vale para os dois uploads
+- **Menu**: ordem alterada — **Lista Apresentação** antes de **Lista Festival** (LINKS do Sidebar)
+- **Lista Apresentação**: lê `atletasApresentacao`; coluna **Tempo → Tipo** (select inline com as 2 opções, ordenável — `Campo` trocou `tempo` por `tipo`); novo chip filtro **Período** (Todos | manhã | tarde) entre Gênero e Tipo (entra no ↺ limpar); modal grava com `adicionarAtleta(..., 'apresentacao')`; export CSV troca `tempo` por `tipo` (mantém `medalha`); estado vazio aponta para `/upload-apresentacao`
+- **Upload Apresentação**: usa `processarApresentacao`, limpa só a própria lista (`limparAtletas('apresentacao')`), total/contador da base da apresentação, descrição cita coluna `tipo` opcional, preview mostra **Tipo** no lugar de Tempo
+- **Upload Festival**: descrição agora diz que alimenta a Lista Festival
+- Testes: +3 em `csv.test.ts` (lê tipo válido, caixa diferente/vazio/ausente, rejeita inválido) — **64 testes, 0 falhas**; `npx tsc -b --force` 0 erros; `npm run build` OK
+- Docs: CHANGELOG (Added/Changed), AGENTS.md (Contexto Crítico + esta sessão)
+
+### Decisões
+- Festival segue sendo a única base de balizamento/controle/análise (confirmado pelo usuário)
+- `tipo` vem do CSV (opcional) — confirmado pelo usuário; coluna só na Lista Apresentação, não na Festival
+- Filtro Período como chip (padão Nível/Gênero/Tipo) e coluna Horário continua exibindo manhã/tarde — confirmado pelo usuário
+- Modal da Lista Apresentação mantém campo Tempo opcional (alimenta medalha); some da tabela/export
+
+### Arquivos
+- src/store/useAppStore.ts
+- src/utils/csv.ts
+- src/utils/csv.test.ts
+- src/components/layout/Sidebar.tsx
+- src/pages/ListaApresentacaoPage.tsx
+- src/pages/UploadApresentacaoPage.tsx
+- src/pages/CarregarPage.tsx
+- CHANGELOG.md
+- AGENTS.md
 
 ### Typecheck
 - Frontend: 0 erros

@@ -44,6 +44,13 @@ function normalizarMedalha(valor: string): Medalha | null {
   return null;
 }
 
+function normalizarTipo(valor: string): Atleta['tipo'] | null {
+  const v = chave(valor).replace(/[^a-z0-9]/g, '');
+  if (v === 'crawlcomprancha' || v === 'crawlcprancha') return 'Crawl c/ prancha';
+  if (v === 'crawlsemprancha' || v === 'crawlsprancha') return 'Crawl s/ prancha';
+  return null;
+}
+
 export function gerarId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -142,6 +149,19 @@ export function parseCSVAtletas(texto: string): ResultadoCSV {
     const categoriaCalculada = categoriaPorIdade(idade);
     const tempo = parseTempo(linha.tempo ?? '');
 
+    const tipoTexto = (linha.tipo ?? '').trim();
+    let tipo: Atleta['tipo'] = undefined;
+    if (tipoTexto) {
+      const tipoNormalizado = normalizarTipo(tipoTexto);
+      if (!tipoNormalizado) {
+        erros.push(
+          `Linha ${numeroLinha}: tipo inválido ("${tipoTexto}") — use Crawl c/ prancha ou Crawl s/ prancha`,
+        );
+        return;
+      }
+      tipo = tipoNormalizado;
+    }
+
     atletas.push({
       id: gerarId(),
       nome,
@@ -152,6 +172,7 @@ export function parseCSVAtletas(texto: string): ResultadoCSV {
       periodo,
       professor: (linha.professor ?? '').trim(),
       nivel: (linha.nivel ?? '').trim(),
+      ...(tipo ? { tipo } : {}),
       tempo,
       medalha: calcularMedalha(tempo, categoriaOficial, genero),
     });

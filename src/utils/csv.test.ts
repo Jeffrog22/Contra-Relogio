@@ -154,6 +154,52 @@ describe('parseCSVAtletas', () => {
     expect(atletas[0].categoriaOficial).toBe('Mirim');
     expect(atletas[1].categoriaOficial).toBe('Petiz');
   });
+
+  it('lê a coluna opcional tipo (Crawl c/ prancha e Crawl s/ prancha)', () => {
+    const csv = [
+      'nome,idade,categoria,genero,horario,professor,nivel,tipo',
+      'Ana Silva,10,Mirim,feminino,08:45,J,Nível 1 A,Crawl c/ prancha',
+      'Bruno Luz,11,Petiz,masculino,13:45,K,Nível 1 A,Crawl s/ prancha',
+    ].join('\n');
+
+    const { atletas, erros } = parseCSVAtletas(csv);
+    expect(erros).toEqual([]);
+    expect(atletas).toHaveLength(2);
+    expect(atletas[0].tipo).toBe('Crawl c/ prancha');
+    expect(atletas[1].tipo).toBe('Crawl s/ prancha');
+  });
+
+  it('aceita tipo com caixa diferente e deixa vazio/ausente como undefined', () => {
+    const csv = [
+      'nome,idade,categoria,genero,horario,professor,nivel,tipo',
+      'Ana Silva,10,Mirim,feminino,08:45,J,Nível 1 A,CRAWL C/ PRANCHA',
+      'Bruno Luz,11,Petiz,masculino,13:45,K,Nível 1 A,',
+    ].join('\n');
+
+    const { atletas, erros } = parseCSVAtletas(csv);
+    expect(erros).toEqual([]);
+    expect(atletas[0].tipo).toBe('Crawl c/ prancha');
+    expect(atletas[1].tipo).toBeUndefined();
+
+    const semColuna = parseCSVAtletas(
+      'nome,idade,categoria,genero,horario,professor,nivel\nAna,11,Petiz,feminino,manhã,J,Nível 1 A',
+    );
+    expect(semColuna.erros).toEqual([]);
+    expect(semColuna.atletas[0].tipo).toBeUndefined();
+  });
+
+  it('reporta tipo inválido', () => {
+    const csv = [
+      'nome,idade,categoria,genero,horario,professor,nivel,tipo',
+      'Ana Silva,10,Mirim,feminino,08:45,J,Nível 1 A,Pedalada',
+    ].join('\n');
+
+    const { atletas, erros } = parseCSVAtletas(csv);
+    expect(atletas).toHaveLength(0);
+    expect(erros).toHaveLength(1);
+    expect(erros[0]).toContain('tipo inválido');
+    expect(erros[0]).toContain('Crawl c/ prancha');
+  });
 });
 
 describe('parseCSVHistorico', () => {

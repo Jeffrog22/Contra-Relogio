@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Atleta } from '../types';
 import { parseCSVAtletas } from '../utils/csv';
-import { formatTempo } from '../utils/medalhas';
 import { useAppStore } from '../store/useAppStore';
 import { Card, CardDescricao, CardHeading } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -11,10 +10,10 @@ import { MedalhaBadge } from '../components/ui/MedalhaBadge';
 
 export function UploadApresentacaoPage() {
   const navigate = useNavigate();
-  const processarAtletas = useAppStore((estado) => estado.processarAtletas);
+  const processarApresentacao = useAppStore((estado) => estado.processarApresentacao);
   const limparAtletas = useAppStore((estado) => estado.limparAtletas);
   const mostrarToast = useAppStore((estado) => estado.mostrarToast);
-  const totalCarregado = useAppStore((estado) => estado.atletas.length);
+  const totalCarregado = useAppStore((estado) => estado.atletasApresentacao.length);
 
   const [nomeArquivo, setNomeArquivo] = useState<string | null>(null);
   const [atletas, setAtletas] = useState<Atleta[]>([]);
@@ -34,17 +33,17 @@ export function UploadApresentacaoPage() {
       mostrarToast('erro', 'Nenhum atleta encontrado no arquivo.');
     } else {
       mostrarToast('sucesso', `${resultado.atletas.length} atleta(s) lido(s).`);
-      processarAtletas(resultado.atletas);
+      processarApresentacao(resultado.atletas);
       navigate('/lista-apresentacao');
     }
   }
 
   function limparCarregamento() {
-    limparAtletas();
+    limparAtletas('apresentacao');
     setNomeArquivo(null);
     setAtletas([]);
     setErros([]);
-    mostrarToast('sucesso', 'Carregamento limpo: atletas e séries removidos.');
+    mostrarToast('sucesso', 'Carregamento limpo: atletas de apresentação removidos.');
   }
 
   return (
@@ -54,11 +53,12 @@ export function UploadApresentacaoPage() {
       <Card>
         <CardHeading icone="📄" titulo="Upload Apresentação" />
         <CardDescricao>
-          Colunas obrigatórias: <b>nome, idade, categoria, genero, horario, professor, nivel</b> —
-          e opcional <b>tempo</b>. Gênero: feminino | masculino. Horário: manhã | tarde | horário
-          (ex.: 08:45 — antes das 13h é manhã, a partir das 13h é tarde). Categoria: Pré-Mirim |
-          Mirim | Petiz | Infantil | Juvenil | Júnior | Sênior — subclasses como "Mirim II" viram a
-          categoria-base (Mirim).
+          Alimenta a <b>Lista Apresentação</b>. Colunas obrigatórias: <b>nome, idade, categoria,
+          genero, horario, professor, nivel</b> — e opcionais <b>tipo</b> (Crawl c/ prancha |
+          Crawl s/ prancha) e <b>tempo</b>. Gênero: feminino | masculino. Horário: manhã | tarde |
+          horário (ex.: 08:45 — antes das 13h é manhã, a partir das 13h é tarde). Categoria:
+          Pré-Mirim | Mirim | Petiz | Infantil | Juvenil | Júnior | Sênior — subclasses como
+          "Mirim II" viram a categoria-base (Mirim).
         </CardDescricao>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -114,11 +114,7 @@ export function UploadApresentacaoPage() {
               { chave: 'horario', titulo: 'Horário', render: (a) => a.periodo },
               { chave: 'professor', titulo: 'Professor', render: (a) => a.professor },
               { chave: 'nivel', titulo: 'Nível', render: (a) => a.nivel },
-              {
-                chave: 'tempo',
-                titulo: 'Tempo',
-                render: (a) => <span className="font-mono tabular-nums">{formatTempo(a.tempo)}</span>,
-              },
+              { chave: 'tipo', titulo: 'Tipo', render: (a) => a.tipo ?? '—' },
               { chave: 'medalha', titulo: 'Medalha', render: (a) => <MedalhaBadge medalha={a.medalha} /> },
             ]}
             itens={atletas}

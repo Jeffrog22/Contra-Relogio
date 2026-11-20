@@ -22,7 +22,7 @@ type Campo =
   | 'periodo'
   | 'professor'
   | 'nivel'
-  | 'tempo';
+  | 'tipo';
 
 type Edicao = { id: string; campo: Campo };
 
@@ -63,7 +63,7 @@ const SELECT_CLASSE =
   'w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500';
 
 export function ListaApresentacaoPage() {
-  const atletas = useAppStore((estado) => estado.atletas);
+  const atletas = useAppStore((estado) => estado.atletasApresentacao);
   const atualizarAtleta = useAppStore((estado) => estado.atualizarAtleta);
   const adicionarAtleta = useAppStore((estado) => estado.adicionarAtleta);
   const mostrarToast = useAppStore((estado) => estado.mostrarToast);
@@ -72,6 +72,7 @@ export function ListaApresentacaoPage() {
   const [nivel, setNivel] = useState<string>('todos');
   const [genero, setGenero] = useState<Genero | 'todos'>('todos');
   const [tipo, setTipo] = useState<string>('todos');
+  const [periodoFiltro, setPeriodoFiltro] = useState<Periodo | 'todos'>('todos');
   const [ordenacao, setOrdenacao] = useState<Ordenacao>({ campo: 'nome', direcao: 'asc' });
   const [edicao, setEdicao] = useState<Edicao | null>(null);
   const [rascunho, setRascunho] = useState('');
@@ -109,17 +110,20 @@ export function ListaApresentacaoPage() {
       }
     }
 
-    const adicionado = adicionarAtleta({
-      nome,
-      idade,
-      categoriaOficial: form.categoria,
-      genero: form.genero,
-      periodo: form.periodo,
-      professor: form.professor.trim(),
-      nivel: form.nivel.trim(),
-      tipo: form.tipo,
-      tempo,
-    });
+    const adicionado = adicionarAtleta(
+      {
+        nome,
+        idade,
+        categoriaOficial: form.categoria,
+        genero: form.genero,
+        periodo: form.periodo,
+        professor: form.professor.trim(),
+        nivel: form.nivel.trim(),
+        tipo: form.tipo,
+        tempo,
+      },
+      'apresentacao',
+    );
     if (!adicionado) return;
 
     setModalAberto(false);
@@ -142,14 +146,8 @@ export function ListaApresentacaoPage() {
         return a.professor.localeCompare(b.professor, 'pt-BR');
       case 'nivel':
         return a.nivel.localeCompare(b.nivel, 'pt-BR');
-      case 'tempo': {
-        const tempoA = a.tempo;
-        const tempoB = b.tempo;
-        if (tempoA === undefined && tempoB === undefined) return 0;
-        if (tempoA === undefined) return 1;
-        if (tempoB === undefined) return -1;
-        return tempoA - tempoB;
-      }
+      case 'tipo':
+        return (a.tipo ?? '').localeCompare(b.tipo ?? '', 'pt-BR');
     }
   }
 
@@ -160,22 +158,28 @@ export function ListaApresentacaoPage() {
       if (nivel !== 'todos' && atleta.nivel !== nivel) return false;
       if (genero !== 'todos' && atleta.genero !== genero) return false;
       if (tipo !== 'todos' && atleta.tipo !== tipo) return false;
+      if (periodoFiltro !== 'todos' && atleta.periodo !== periodoFiltro) return false;
       return true;
     });
     return [...base].sort((a, b) => {
       const resultado = comparar(a, b, ordenacao.campo);
       return ordenacao.direcao === 'asc' ? resultado : -resultado;
     });
-  }, [atletas, busca, nivel, genero, tipo, ordenacao]);
+  }, [atletas, busca, nivel, genero, tipo, periodoFiltro, ordenacao]);
 
   const filtradoAtivo =
-    busca.trim() !== '' || nivel !== 'todos' || genero !== 'todos' || tipo !== 'todos';
+    busca.trim() !== '' ||
+    nivel !== 'todos' ||
+    genero !== 'todos' ||
+    tipo !== 'todos' ||
+    periodoFiltro !== 'todos';
 
   function limparFiltros() {
     setBusca('');
     setNivel('todos');
     setGenero('todos');
     setTipo('todos');
+    setPeriodoFiltro('todos');
   }
 
   function ordenarPor(campo: Campo) {
@@ -232,17 +236,6 @@ export function ListaApresentacaoPage() {
         return;
       }
       atualizarAtleta(atleta.id, { idade });
-    } else if (campo === 'tempo') {
-      if (bruto.trim() === '') {
-        atualizarAtleta(atleta.id, { tempo: undefined });
-      } else {
-        const tempo = parseTempo(bruto.trim());
-        if (tempo === undefined) {
-          mostrarToast('erro', 'Tempo inválido. Use segundos (ex.: 34.66 ou 34,66).');
-          return;
-        }
-        atualizarAtleta(atleta.id, { tempo });
-      }
     } else if (campo === 'professor') {
       atualizarAtleta(atleta.id, { professor: bruto.trim() });
     } else if (campo === 'nivel') {
@@ -259,6 +252,8 @@ export function ListaApresentacaoPage() {
       atualizarAtleta(atleta.id, { genero: valor as Genero });
     } else if (campo === 'periodo') {
       atualizarAtleta(atleta.id, { periodo: valor as Periodo });
+    } else if (campo === 'tipo') {
+      atualizarAtleta(atleta.id, { tipo: valor as Atleta['tipo'] });
     }
     setEdicao(null);
   }
@@ -340,7 +335,6 @@ export function ListaApresentacaoPage() {
         'professor',
         'nivel',
         'tipo',
-        'tempo',
         'medalha',
       ],
       filtrados.map((a) => [
@@ -352,7 +346,6 @@ export function ListaApresentacaoPage() {
         a.professor,
         a.nivel,
         a.tipo ?? '',
-        a.tempo ?? '',
         a.medalha ?? 'Sem Tempo',
       ]),
     );
@@ -371,6 +364,13 @@ export function ListaApresentacaoPage() {
     { valor: 'todos', rotulo: 'Todos' },
     { valor: 'Crawl c/ prancha', rotulo: 'Crawl c/ prancha' },
     { valor: 'Crawl s/ prancha', rotulo: 'Crawl s/ prancha' },
+  ];
+
+  const PERIODOS_FILTRO: (Periodo | 'todos')[] = ['todos', 'manhã', 'tarde'];
+
+  const TIPOS_SELECT: { valor: string; rotulo: string }[] = [
+    { valor: '', rotulo: '—' },
+    ...TIPOS.filter((opcao) => opcao.valor !== 'todos'),
   ];
 
   return (
@@ -430,6 +430,22 @@ export function ListaApresentacaoPage() {
                 key={opcao}
                 ativo={genero === opcao}
                 onClick={() => setGenero(opcao)}
+                className={chipClasse}
+              >
+                {opcao}
+              </Pill>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              Período
+            </span>
+            {PERIODOS_FILTRO.map((opcao) => (
+              <Pill
+                key={opcao}
+                ativo={periodoFiltro === opcao}
+                onClick={() => setPeriodoFiltro(opcao)}
                 className={chipClasse}
               >
                 {opcao}
@@ -516,15 +532,9 @@ export function ListaApresentacaoPage() {
               render: (a) => celulaTexto(a, 'nivel', a.nivel),
             },
             {
-              chave: 'tempo',
-              titulo: cabecalhoOrdenavel('tempo', 'Tempo'),
-              render: (a) =>
-                celulaTexto(
-                  a,
-                  'tempo',
-                  formatTempo(a.tempo),
-                  a.tempo !== undefined ? String(a.tempo) : '',
-                ),
+              chave: 'tipo',
+              titulo: cabecalhoOrdenavel('tipo', 'Tipo'),
+              render: (a) => celulaSelect(a, 'tipo', a.tipo ?? '', TIPOS_SELECT),
             },
           ]}
           itens={filtrados}
@@ -533,8 +543,11 @@ export function ListaApresentacaoPage() {
             atletas.length === 0 ? (
               <>
                 Nenhum atleta processado.{' '}
-                <Link className="text-primary-600 dark:text-primary-400 underline" to="/carregar">
-                  Carregue um CSV
+                <Link
+                  className="text-primary-600 dark:text-primary-400 underline"
+                  to="/upload-apresentacao"
+                >
+                  Envie um CSV
                 </Link>
                 .
               </>
