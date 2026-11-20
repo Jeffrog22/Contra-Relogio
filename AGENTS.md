@@ -589,3 +589,33 @@ Regras:
 ### Typecheck
 - Frontend: 0 erros
 - Backend: 0 erros
+
+---
+
+## Sessão: 20/10/2026 — Auto-process CSV + Upload Apresentação
+
+### O que foi feito
+- **Carregar**: label do CardHeading 'Upload do arquivo' → 'Upload Festival'; removeu o botão 'Processar'; agora o CSV é processado automaticamente quando válido (sem erros e com atletas), exibindo toast de erro se houver falhas de validação; navega para /lista após o sucesso
+- **Upload Apresentação**: nova tela /upload-apresentacao (src/pages/UploadApresentacaoPage.tsx) com mesma lógica de processamento do Carregar, mas navega para /lista-apresentacao após o sucesso
+- **Menu**: novo item 'Upload Apresentação' com ícone 📤, posicionado após 'Carregar' no Sidebar
+- **Rota**: /upload-apresentacao → UploadApresentacaoPage em App.tsx
+- Verificação: 
+px tsc -b --force 0 erros; **61 testes, 0 falhas**; 
+pm run build OK
+
+### Decisões
+- Auto-process sem mostrar preview: apenas exibe toast de erro se houver problemas de validação
+- O preview da tabela ainda é exibido antes do processamento automático (não é removido)
+- UploadApresentacaoPage é uma cópia da CarregarPage com rota de destino diferente (/lista-apresentacao)
+
+### Arquivos
+- src/pages/CarregarPage.tsx
+- src/pages/UploadApresentacaoPage.tsx (novo)
+- src/components/layout/Sidebar.tsx
+- src/App.tsx
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros

@@ -25,6 +25,11 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - **Lista Apresentação** (nova tela `/lista-apresentacao`): mesmo layout/grid/lógica da Lista Festival, com filtros por chips — Nível (Todos | Iniciação A | Iniciação B), Gênero (Todos | feminino | masculino) e Tipo (Todos | Crawl c/ prancha | Crawl s/ prancha); busca, ordenação por header, edição inline (duplo clique) e export CSV (`listagem-apresentacao.csv`); modal "Adicionar atleta" com campo Tipo
 - Campo opcional `tipo` (`'Crawl c/ prancha' | 'Crawl s/ prancha'`) no `Atleta` — usado apenas como filtro na Lista Apresentação (não afeta medalha nem balizamento)
 - Ícone emoji `🤿` (mergulho com máscara e snorkel) no item de menu e no CardHeading da Lista Apresentação
+- **Upload Apresentação** (nova tela `/upload-apresentacao`): mesma lógica de upload do Carregar, processa CSV automaticamente e navega para `/lista-apresentacao` após o sucesso
+- Item de menu 'Upload Apresentação' após 'Carregar' com ícone 📤
+
+### Changed
+- **Carregar**: CardHeading 'Upload do arquivo' → 'Upload Festival'; removeu o botão 'Processar'; CSV processado automaticamente quando válido (sem erros e com atletas), exibindo toast de erro se houver falhas de validação; navega para /lista após o sucesso
 
 ### Changed
 - **Lista de Atletas**: chips de medalha removidos (ficam só Categoria e Gênero); **ordenação por clique no header** — clique simples alterna asc/desc com seta ▲/▼ (tempo vazio sempre no fim; categoria segue a ordem oficial Pré-Mirim→Sênior)
