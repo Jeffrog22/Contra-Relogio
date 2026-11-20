@@ -3,6 +3,7 @@ import { useAppStore } from '../../store/useAppStore';
 
 const LINKS = [
   { to: '/carregar', icone: '📄', rotulo: 'Carregar' },
+  { to: '/upload-apresentacao', icone: '📤', rotulo: 'Upload Apresentação' },
   { to: '/lista', icone: '🏊', rotulo: 'Lista Festival' },
   { to: '/lista-apresentacao', icone: '🤿', rotulo: 'Lista Apresentação' },
   { to: '/balizamento', icone: '🏁', rotulo: 'Balizamento' },

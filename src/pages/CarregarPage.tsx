@@ -34,17 +34,9 @@ export function CarregarPage() {
       mostrarToast('erro', 'Nenhum atleta encontrado no arquivo.');
     } else {
       mostrarToast('sucesso', `${resultado.atletas.length} atleta(s) lido(s).`);
+      processarAtletas(atletas);
+      navigate('/lista');
     }
-  }
-
-  function processar() {
-    if (atletas.length === 0) {
-      mostrarToast('erro', 'Nada a processar. Envie um CSV válido.');
-      return;
-    }
-    processarAtletas(atletas);
-    mostrarToast('sucesso', `${atletas.length} atleta(s) processado(s).`);
-    navigate('/lista');
   }
 
   function limparCarregamento() {
@@ -60,7 +52,7 @@ export function CarregarPage() {
       <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Carregar</h1>
 
       <Card>
-        <CardHeading icone="📄" titulo="Upload do arquivo" />
+        <CardHeading icone="📄" titulo="Upload Festival" />
         <CardDescricao>
           Colunas obrigatórias: <b>nome, idade, categoria, genero, horario, professor, nivel</b> —
           e opcional <b>tempo</b>. Gênero: feminino | masculino. Horário: manhã | tarde | horário
@@ -81,13 +73,6 @@ export function CarregarPage() {
               Arquivo: <b>{nomeArquivo}</b> — {atletas.length} atleta(s)
             </span>
           )}
-          <Button
-            onClick={processar}
-            disabled={atletas.length === 0}
-            className="disabled:opacity-50"
-          >
-            Processar
-          </Button>
           <Button
             variante="secondary"
             onClick={limparCarregamento}
