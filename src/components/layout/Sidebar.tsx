@@ -1,9 +1,13 @@
-import { NavLink } from 'react-router-dom';
+import { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 
-const LINKS = [
-  { to: '/carregar', icone: '📄', rotulo: 'Carregar' },
+const CARREGAR_SUBITENS = [
+  { to: '/carregar', icone: '📄', rotulo: 'Upload Festival' },
   { to: '/upload-apresentacao', icone: '📤', rotulo: 'Upload Apresentação' },
+];
+
+const LINKS = [
   { to: '/lista', icone: '🏊', rotulo: 'Lista Festival' },
   { to: '/lista-apresentacao', icone: '🤿', rotulo: 'Lista Apresentação' },
   { to: '/balizamento', icone: '🏁', rotulo: 'Balizamento' },
@@ -11,9 +15,24 @@ const LINKS = [
   { to: '/analise', icone: '📊', rotulo: 'Análise' },
 ];
 
+const LINK_CLASSE_ATIVA =
+  'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium flex items-center gap-3 px-2 py-2 rounded-md text-sm transition-colors';
+
+const LINK_CLASSE_INATIVA =
+  'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 flex items-center gap-3 px-2 py-2 rounded-md text-sm transition-colors';
+
+const SUBITEM_CLASSE_ATIVA =
+  'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 text-xs flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors';
+
+const SUBITEM_CLASSE_INATIVA =
+  'text-gray-500 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors';
+
 export function Sidebar() {
   const aberta = useAppStore((estado) => estado.sidebarAberta);
   const alternarSidebar = useAppStore((estado) => estado.alternarSidebar);
+  const [carregarAberto, setCarregarAberto] = useState(false);
+  const location = useLocation();
+  const carregarAtivo = location.pathname === '/carregar' || location.pathname === '/upload-apresentacao';
 
   return (
     <aside
@@ -39,14 +58,49 @@ export function Sidebar() {
       )}
 
       <nav className="flex flex-col gap-1 px-2">
+        {/* Carregar com dropdown */}
+        <div className="flex flex-col gap-1">
+          <button
+            type="button"
+            onClick={() => setCarregarAberto(!carregarAberto)}
+            className={`flex items-center gap-3 px-2 py-2 rounded-md text-sm transition-colors ${
+              carregarAtivo ? LINK_CLASSE_ATIVA : LINK_CLASSE_INATIVA
+            }`}
+          >
+            <span className="text-lg leading-none">📄</span>
+            {aberta && <span className="truncate">Carregar</span>}
+            {aberta && (
+              <span className="ml-auto text-xs">{carregarAberto ? '▲' : '▼'}</span>
+            )}
+          </button>
+
+          {aberta && carregarAberto && (
+            <div className="ml-3 flex flex-col gap-0.5 border-l border-primary-300 dark:border-primary-700 pl-2">
+              {CARREGAR_SUBITENS.map((sub) => (
+                <NavLink
+                  key={sub.to}
+                  to={sub.to}
+                  className={({ isActive }) =>
+                    isActive ? SUBITEM_CLASSE_ATIVA : SUBITEM_CLASSE_INATIVA
+                  }
+                  title={sub.rotulo}
+                  onClick={() => setCarregarAberto(false)}
+                >
+                  <span className="text-lg leading-none">{sub.icone}</span>
+                  {aberta && <span className="truncate">{sub.rotulo}</span>}
+                </NavLink>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Demais links */}
         {LINKS.map((link) => (
           <NavLink
             key={link.to}
             to={link.to}
             className={({ isActive }) =>
-              isActive
-                ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium flex items-center gap-3 px-2 py-2 rounded-md text-sm transition-colors'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 flex items-center gap-3 px-2 py-2 rounded-md text-sm transition-colors'
+              isActive ? LINK_CLASSE_ATIVA : LINK_CLASSE_INATIVA
             }
             title={link.rotulo}
           >
