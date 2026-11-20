@@ -8,22 +8,21 @@ const ICONE_APRESENTACAO: ReactNode = (
     height="22"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    {/* cabeça + touca */}
-    <circle cx="12" cy="7" r="4" />
-    <path d="M8 7c0-2 4-4 8-4s8 2 8 4" />
+    {/* cabeça */}
+    <circle cx="12" cy="7" r="3.5" stroke="currentColor" strokeWidth="2" />
+    {/* touca */}
+    <path
+      d="M8.5 7c0-2 4-4 7-4s7 2 7 4"
+      stroke="#3B82F6"
+      strokeWidth="2"
+    />
     {/* óculos */}
-    <circle cx="10" cy="7" r="1.2" />
-    <circle cx="14" cy="7" r="1.2" />
-    <path d="M11.2 7h1.6" />
-    {/* corpo nadando */}
-    <path d="M12 11L10 15L14 15L12 11" />
-    <path d="M10 15L8 18" />
-    <path d="M14 15L16 18" />
+    <circle cx="10.5" cy="6.5" r="1" stroke="currentColor" strokeWidth="1.5" />
+    <circle cx="13.5" cy="6.5" r="1" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M11.5 6.5h1" stroke="currentColor" strokeWidth="1.5" />
   </svg>
 );
 
