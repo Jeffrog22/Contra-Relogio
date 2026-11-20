@@ -1,35 +1,10 @@
-import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-
-const ICONE_APRESENTACAO: ReactNode = (
-  <svg
-    width="22"
-    height="22"
-    viewBox="0 0 24 24"
-    fill="none"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    {/* cabeça */}
-    <circle cx="12" cy="7" r="3.5" stroke="#333333" strokeWidth="2" />
-    {/* touca azul */}
-    <path
-      d="M8.5 7c0-2 4-4 7-4s7 2 7 4"
-      stroke="#3B82F6"
-      strokeWidth="2.5"
-    />
-    {/* óculos vermelho */}
-    <circle cx="10.5" cy="6.5" r="1" stroke="#EF4444" strokeWidth="1.5" />
-    <circle cx="13.5" cy="6.5" r="1" stroke="#EF4444" strokeWidth="1.5" />
-    <path d="M11.5 6.5h1" stroke="#EF4444" strokeWidth="1.5" />
-  </svg>
-);
 
 const LINKS = [
   { to: '/carregar', icone: '📄', rotulo: 'Carregar' },
   { to: '/lista', icone: '🏊', rotulo: 'Lista Festival' },
-  { to: '/lista-apresentacao', icone: ICONE_APRESENTACAO, rotulo: 'Lista Apresentação' },
+  { to: '/lista-apresentacao', icone: '🤿', rotulo: 'Lista Apresentação' },
   { to: '/balizamento', icone: '🏁', rotulo: 'Balizamento' },
   { to: '/controle', icone: '⏱️', rotulo: 'Controle' },
   { to: '/analise', icone: '📊', rotulo: 'Análise' },

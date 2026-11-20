@@ -377,7 +377,7 @@ export function ListaApresentacaoPage() {
       <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Lista Apresentação</h1>
 
       <Card>
-        <CardHeading icone="🎤" titulo="Atletas para apresentação" />
+        <CardHeading icone="🤿" titulo="Atletas para apresentação" />
 
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <div className="w-full max-w-xs">
