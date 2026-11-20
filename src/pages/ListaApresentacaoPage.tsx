@@ -8,6 +8,7 @@ import { CATEGORIAS } from '../utils/categorias';
 import { Card, CardHeading } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { InputMascaraTempo } from '../components/ui/InputMascaraTempo';
 import { Modal } from '../components/ui/Modal';
 import { Pill } from '../components/ui/Pill';
 import { SearchInput } from '../components/ui/SearchInput';
@@ -704,10 +705,12 @@ export function ListaApresentacaoPage() {
               >
                 Tempo (opcional)
               </label>
-              <Input
+              <InputMascaraTempo
                 id="novo-tempo"
-                value={form.tempo}
-                onChange={(evento) => alterarForm('tempo', evento.target.value)}
+                valor={form.tempo}
+                onMudar={(tempo) =>
+                  alterarForm('tempo', tempo !== undefined ? formatTempo(tempo) : '')
+                }
                 placeholder="ex.: 34.66"
               />
             </div>

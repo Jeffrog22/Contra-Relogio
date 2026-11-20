@@ -58,10 +58,10 @@ describe('parseTempo', () => {
 });
 
 describe('mascaraTempo', () => {
-  it('formata 4 dígitos como 00\'00', () => {
-    expect(mascaraTempo('3466')).toBe("34'66");
+  it("formata 4 dígitos como 00''00", () => {
+    expect(mascaraTempo('3221')).toBe("32''21");
     expect(mascaraTempo('34')).toBe('34');
-    expect(mascaraTempo('1845a9')).toBe("18'45");
+     expect(mascaraTempo('1845a9')).toBe("18''45");
     expect(mascaraTempo('')).toBe('');
   });
 
@@ -71,8 +71,10 @@ describe('mascaraTempo', () => {
 });
 
 describe('formatTempo', () => {
-  it('formata com vírgula decimal', () => {
-    expect(formatTempo(34.66)).toBe('34,66');
+  it('formata com segundos e centésimos separados por aspas duplas', () => {
+    expect(formatTempo(34.66)).toBe("34''66");
+    expect(formatTempo(5.4)).toBe("05''40");
+    expect(formatTempo(22.3)).toBe("22''30");
     expect(formatTempo(undefined)).toBe('—');
   });
 });

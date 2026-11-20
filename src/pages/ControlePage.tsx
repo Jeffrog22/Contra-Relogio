@@ -25,7 +25,7 @@ function TempoInput({ atletaId, tempo }: { atletaId: string; tempo?: number }) {
         setValor(mascarado);
         atualizarTempo(atletaId, parseTempo(mascarado));
       }}
-      placeholder="00'00"
+      placeholder="00''00"
       inputMode="numeric"
       aria-label="Tempo do atleta"
       className="font-mono tabular-nums w-24"

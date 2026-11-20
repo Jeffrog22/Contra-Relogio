@@ -41,7 +41,7 @@ export function calcularMedalha(
   return 'BRONZE';
 }
 
-/** Aceita "34.66", "34,66", "34'66", número ou vazio. 0/vazio/não numérico → undefined (Sem Tempo). */
+/** Aceita "34.66", "34,66", "34'66" / "34''66", número ou vazio. 0/vazio/não numérico → undefined (Sem Tempo). */
 export function parseTempo(valor: string | number | null | undefined): number | undefined {
   if (valor === null || valor === undefined) return undefined;
   if (typeof valor === 'number') {
@@ -50,7 +50,7 @@ export function parseTempo(valor: string | number | null | undefined): number | 
   const texto = valor.trim();
   if (!texto) return undefined;
 
-  const mascarado = texto.match(/^(\d{1,2})\s*['′]\s*(\d{1,2})$/);
+  const mascarado = texto.match(/^(\d{1,2})\s*['′"]{1,2}\s*(\d{1,2})$/);
   if (mascarado) {
     const segundos = Number(mascarado[1]);
     const centesimos = Number(mascarado[2]);
@@ -65,12 +65,14 @@ export function parseTempo(valor: string | number | null | undefined): number | 
 
 export function formatTempo(tempo: number | undefined): string {
   if (tempo === undefined || tempo <= 0) return '—';
-  return tempo.toFixed(2).replace('.', ',');
+  const segundos = Math.floor(tempo);
+  const centesimos = Math.round((tempo - segundos) * 100);
+  return `${segundos.toString().padStart(2, '0')}''${centesimos.toString().padStart(2, '0')}`;
 }
 
-/** Máscara de digitação: "3466" → "34'66" (máx. 4 dígitos). */
+/** Máscara de digitação: "3221" → "32''21" (máx. 4 dígitos, segundos''centésimos). */
 export function mascaraTempo(valor: string): string {
   const digitos = valor.replace(/\D/g, '').slice(0, 4);
   if (digitos.length <= 2) return digitos;
-  return `${digitos.slice(0, 2)}'${digitos.slice(2)}`;
+  return `${digitos.slice(0, 2)}''${digitos.slice(2)}`;
 }
