@@ -536,3 +536,31 @@ Regras:
 ### Typecheck
 - Frontend: 0 erros
 - Backend: 0 erros
+
+---
+
+## Sessão: 20/10/2026 — Ícone SVG Lista Apresentação touca azul e óculos vermelho
+
+### O que foi feito
+- Substituiu o SVG anterior por um ícone baseado no vetor fornecido (`swimming-svgrepo-com (1).svg`), simplificado para ícone de menu:
+  - **Cabeça**: círculo em cinza escuro (`#333333`)
+  - **Touca**: arco superior em azul (`#3B82F6`)
+  - **Óculos**: dois círculos pequenos + ponte em vermelho (`#EF4444`)
+  - **Sem corpo** (apenas cabeça e óculos)
+  - `viewBox="0 0 24 24"`, `strokeLinecap="round"`, `strokeLinejoin="round"`, sem `fill`
+- Item de menu `Lista Apresentação` exibe o SVG customizado no `Sidebar.tsx`
+- Verificação: `npx tsc -b --force` 0 erros; **61 testes, 0 falhas**; `npm run build` OK
+
+### Decisões
+- Duas cores fixas: azul `#3B82F6` na touca + vermelho `#EF4444` nos óculos (tema de natação)
+- Cabeça em `#333333` para contraste em light/dark mode
+- `CardHeading.icone` aceita apenas `string`, então a Lista Apresentação mantém o emoji `🎤` no título da página; o SVG fica só no item de menu do Sidebar
+
+### Arquivos
+- `src/components/layout/Sidebar.tsx`
+- `AGENTS.md`
+- `CHANGELOG.md`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
