@@ -564,3 +564,28 @@ Regras:
 ### Typecheck
 - Frontend: 0 erros
 - Backend: 0 erros
+
+---
+
+## Sessão: 20/10/2026 — Ícone Lista Apresentação agora é 🤿 (menu e label)
+
+### O que foi feito
+- Substituiu o SVG customizado (cabeça+touca azul+óculos vermelho) pelo emoji `🤿` (mergulho com máscara e snorkel)
+- Item de menu `Lista Apresentação` agora exibe `🤿` no `Sidebar.tsx`
+- CardHeading da Lista Apresentação agora exibe `🤿` no título da página (substitui `🎤`)
+- Removida a constante `ICONE_APRESENTACAO` (SVG inline) do `Sidebar.tsx`
+- Verificação: `npx tsc -b --force` 0 erros; **61 testes, 0 falhas**; `npm run build` OK
+
+### Decisões
+- Emoji `🤿` funciona tanto no menu (sidebar) quanto no CardHeading (que aceita apenas `string`)
+- Mais simples e consistente com os outros itens do menu que usam emoji (`📄`, `🏊`, `🏁`, `⏱️`, `📊`)
+
+### Arquivos
+- `src/components/layout/Sidebar.tsx`
+- `src/pages/ListaApresentacaoPage.tsx`
+- `AGENTS.md`
+- `CHANGELOG.md`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
