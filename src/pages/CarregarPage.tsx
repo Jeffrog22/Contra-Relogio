@@ -34,7 +34,7 @@ export function CarregarPage() {
       mostrarToast('erro', 'Nenhum atleta encontrado no arquivo.');
     } else {
       mostrarToast('sucesso', `${resultado.atletas.length} atleta(s) lido(s).`);
-      processarAtletas(atletas);
+      processarAtletas(resultado.atletas);
       navigate('/lista');
     }
   }
