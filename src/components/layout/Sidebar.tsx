@@ -13,13 +13,17 @@ const ICONE_APRESENTACAO: ReactNode = (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M3 6c0-2 4-4 9-4s9 2 9 4" />
-    <path d="M3 6c0 3 3 6 9 6s9-3 9-6" />
-    <circle cx="8" cy="9" r="2" />
-    <circle cx="16" cy="9" r="2" />
-    <path d="M10 9h4" />
-    <path d="M12 11v1" />
-    <path d="M9 13Q12 14 15 13" />
+    {/* cabeça + touca */}
+    <circle cx="12" cy="7" r="4" />
+    <path d="M8 7c0-2 4-4 8-4s8 2 8 4" />
+    {/* óculos */}
+    <circle cx="10" cy="7" r="1.2" />
+    <circle cx="14" cy="7" r="1.2" />
+    <path d="M11.2 7h1.6" />
+    {/* corpo nadando */}
+    <path d="M12 11L10 15L14 15L12 11" />
+    <path d="M10 15L8 18" />
+    <path d="M14 15L16 18" />
   </svg>
 );
 
