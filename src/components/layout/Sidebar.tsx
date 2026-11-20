@@ -12,17 +12,17 @@ const ICONE_APRESENTACAO: ReactNode = (
     strokeLinejoin="round"
   >
     {/* cabeça */}
-    <circle cx="12" cy="7" r="3.5" stroke="currentColor" strokeWidth="2" />
-    {/* touca */}
+    <circle cx="12" cy="7" r="3.5" stroke="#333333" strokeWidth="2" />
+    {/* touca azul */}
     <path
       d="M8.5 7c0-2 4-4 7-4s7 2 7 4"
       stroke="#3B82F6"
-      strokeWidth="2"
+      strokeWidth="2.5"
     />
-    {/* óculos */}
-    <circle cx="10.5" cy="6.5" r="1" stroke="currentColor" strokeWidth="1.5" />
-    <circle cx="13.5" cy="6.5" r="1" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M11.5 6.5h1" stroke="currentColor" strokeWidth="1.5" />
+    {/* óculos vermelho */}
+    <circle cx="10.5" cy="6.5" r="1" stroke="#EF4444" strokeWidth="1.5" />
+    <circle cx="13.5" cy="6.5" r="1" stroke="#EF4444" strokeWidth="1.5" />
+    <path d="M11.5 6.5h1" stroke="#EF4444" strokeWidth="1.5" />
   </svg>
 );
 
