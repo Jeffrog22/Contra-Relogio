@@ -26,7 +26,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Campo opcional `tipo` (`'Crawl c/ prancha' | 'Crawl s/ prancha'`) no `Atleta` — usado apenas como filtro na Lista Apresentação (não afeta medalha nem balizamento)
 - Ícone emoji `🤿` (mergulho com máscara e snorkel) no item de menu e no CardHeading da Lista Apresentação
 - **Upload Apresentação** (nova tela `/upload-apresentacao`): mesma lógica de upload do Carregar, processa CSV automaticamente e navega para `/lista-apresentacao` após o sucesso
-- Item de menu 'Upload Apresentação' após 'Carregar' com ícone 📤
+- Menu: 'Carregar' vira dropdown com 'Upload Festival' (/carregar) e 'Upload Apresentação' (/upload-apresentacao) como sub-itens
 
 ### Changed
 - **Carregar**: CardHeading 'Upload do arquivo' → 'Upload Festival'; removeu o botão 'Processar'; CSV processado automaticamente quando válido (sem erros e com atletas), exibindo toast de erro se houver falhas de validação; navega para /lista após o sucesso

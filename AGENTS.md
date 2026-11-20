@@ -619,3 +619,29 @@ pm run build OK
 ### Typecheck
 - Frontend: 0 erros
 - Backend: 0 erros
+
+---
+
+## Sessão: 20/10/2026 — Carregar vira dropdown com Upload Festival e Upload Apresentação
+
+### O que foi feito
+- Sidebar: 'Carregar' agora é um dropdown que expande para mostrar 'Upload Festival' (/carregar) e 'Upload Apresentação' (/upload-apresentacao) como sub-itens
+- Item raiz 'Upload Apresentação' removido do menu
+- Ícone 📄 para Upload Festival, 📤 para Upload Apresentacao
+- Verificação: 
+px tsc -b --force 0 erros; **61 testes, 0 falhas**; 
+pm run build OK
+
+### Decisões
+- Dropdown abre/fecha ao clicar em 'Carregar'
+- Ao clicar em um sub-item, o dropdown fecha e navega para a rota correspondente
+- Item pai 'Carregar' fica destacado quando qualquer sub-rota está ativa (/carregar ou /upload-apresentacao)
+
+### Arquivos
+- src/components/layout/Sidebar.tsx
+- AGENTS.md
+- CHANGELOG.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
