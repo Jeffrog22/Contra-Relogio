@@ -486,3 +486,26 @@ Regras:
 ### Typecheck
 - Frontend: 0 erros
 - Backend: 0 erros
+
+---
+
+## Sessão: 20/10/2026 — Ícone SVG da Lista Apresentação baseado na ilustração da raiz
+
+### O que foi feito
+- Substituiu o SVG simplificado (rosto com óculos) por um ícone SVG baseado na ilustração da raiz (`swimming-svgrepo-com (1).svg`), adaptado para ícone de menu: `viewBox="0 0 24 24"`, `stroke="currentColor"` (herda cor do tema), `strokeWidth="2"`, linha de nadador com cabeça/touca e óculos
+- Item de menu `Lista Apresentação` agora exibe o SVG customizado no `Sidebar.tsx`
+- Verificação: `npx tsc -b --force` 0 erros; **61 testes, 0 falhas**; `npm run build` OK
+
+### Decisões
+- `CardHeading.icone` aceita apenas `string`, então a Lista Apresentação mantém o emoji `🎤` no título da página; o SVG fica só no item de menu do Sidebar
+- SVG usa `stroke="currentColor"` para funcionar em light/dark mode sem cores fixas
+
+### Arquivos
+- `src/components/layout/Sidebar.tsx`
+- `swimming-svgrepo-com (1).svg` (cópia na raiz do projeto)
+- `AGENTS.md`
+- `CHANGELOG.md`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
