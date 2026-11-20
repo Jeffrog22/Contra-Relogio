@@ -21,12 +21,18 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Subclasses/turmas de categoria no CSV (`Mirim II`, `Pré-Mirim II`, `Petiz A`) são normalizadas para a categoria-base em `normalizarCategoria` (match exato ou por remoção de tokens finais; `Master` continua inválido)
 - Botão **"Limpar carregamento"** no CarregarPage: limpa atletas e séries do app (histórico da Análise fica intocado)
 
+### Added
+- **Lista Apresentação** (nova tela `/lista-apresentacao`): mesmo layout/grid/lógica da Lista Festival, com filtros por chips — Nível (Todos | Iniciação A | Iniciação B), Gênero (Todos | feminino | masculino) e Tipo (Todos | Crawl c/ prancha | Crawl s/ prancha); busca, ordenação por header, edição inline (duplo clique) e export CSV (`listagem-apresentacao.csv`); modal "Adicionar atleta" com campo Tipo
+- Campo opcional `tipo` (`'Crawl c/ prancha' | 'Crawl s/ prancha'`) no `Atleta` — usado apenas como filtro na Lista Apresentação (não afeta medalha nem balizamento)
+- Ícone SVG customizado (rosto com touca e óculos de natação) no item de menu Lista Apresentação; `icone` do `LINKS` agora aceita `ReactNode`
+
 ### Changed
 - **Lista de Atletas**: chips de medalha removidos (ficam só Categoria e Gênero); **ordenação por clique no header** — clique simples alterna asc/desc com seta ▲/▼ (tempo vazio sempre no fim; categoria segue a ordem oficial Pré-Mirim→Sênior)
 - **Balizamento**: coluna **Aviso** removida (nenhum aviso exibido na tabela); o campo `aviso` continua nos dados/algoritmo (`serie.aviso`) sem impacto na UI; mesma limpeza no Controle
 - **Menu/sidebar**: "Carregar CSV" → **"Carregar"**; "Listagem" → **"Lista de Atletas"**; H1s atualizados; botão **"Processar"** movido para o card principal de upload (acesso facilitado, desabilitado sem preview)
 - **Nome do app**: "Festival Interno PPt" → **"Festival Interno"** (títulos dos docs, aba do navegador e heading da tela de Controle); ícone do card "Pré-visualização" removido
 - **Categoria do CSV passou a governar tudo**: medalha, balizamento, séries e telas usam a `categoriaOficial` (a regra real é o ano de nascimento, que não vem no CSV — a idade não decide). `categoriaCalculada` fica só como referência interna; exportação de `/lista` agora tem coluna `categoria` única (a oficial); selo de divergência removido
+- **Menu/sidebar**: "Lista de Atletas" → **"Lista Festival"** (rótulo e H1); novo item **"Lista Apresentação"** com rota `/lista-apresentacao`
 
 ### Fixed
 - Badge da versão travado em `0.3.2` no deploy: a sincronização `package.json`↔tag virou ciclo fechado — `.githooks/semver-bump.sh` (fonte única do bump, usada por `commit-msg` e `post-commit`) + **`post-commit` com auto-reparo**: como o git grava o tree a partir do índice em memória, o staging do `commit-msg` ficava fora do commit; o `post-commit` detecta a divergência e faz `git commit --amend` (com guard anti-recursão) **antes** de criar a tag. O fallback do build no Cloudflare Pages (clone sem tags) fica sempre correto

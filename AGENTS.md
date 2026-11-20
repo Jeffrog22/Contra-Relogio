@@ -456,3 +456,33 @@ Regras:
 ### Typecheck
 - Frontend: 0 erros
 - Backend: 0 erros
+
+---
+
+## Sessão: 20/10/2026 — Lista Festival + Lista Apresentação
+
+### O que foi feito
+- **Renomeio**: "Lista de Atletas" → "Lista Festival" (rótulo do menu em `Sidebar.tsx:6` e `<h1>` em `ListaPage.tsx:361`)
+- **Nova tela Lista Apresentação** (`src/pages/ListaApresentacaoPage.tsx`, rota `/lista-apresentacao`): mesmo layout/grid/lógica da Lista Festival, com filtros por chips — Nível (Todos | Iniciação A | Iniciação B), Gênero (Todos | feminino | masculino) e Tipo (Todos | Crawl c/ prancha | Crawl s/ prancha); filtro busca; ordenação por header; edição inline (duplo clique); export CSV (`listagem-apresentacao.csv`); modal "Adicionar atleta" com campo Tipo
+- **Novo campo `tipo?`** em `Atleta` (`src/types.ts:26`): `'Crawl c/ prancha' | 'Crawl s/ prancha'`, opcional, usado apenas como filtro na Lista Apresentação (não afeta medalha nem balizamento); flui automaticamente pelo spread do store em `adicionarAtleta`/`atualizarAtleta`
+- **Menu**: novo item `Lista Apresentação` com ícone SVG customizado (rosto com touca e óculos de natação, stroke `currentColor`) após Lista Festival; `icone` do `LINKS` agora aceita `ReactNode`
+- **Rota**: `/lista-apresentacao` → `ListaApresentacaoPage` em `App.tsx`
+- Verificação: `npx tsc -b --force` 0 erros; **61 testes, 0 falhas**; `npm run build` OK
+
+### Decisões
+- `tipo` é opcional no `Atleta` (não entra no CSV nem no balizamento); só aparece no filtro e no modal da Lista Apresentação
+- A Lista Festival mantém o filtro por Categoria (não tem o filtro Tipo)
+- Ícone SVG customizado usado apenas no item do menu; a Lista Apresentação usa emoji `🎤` no CardHeading (pois `CardHeading.icone` aceita `string`)
+
+### Arquivos
+- `src/types.ts`
+- `src/components/layout/Sidebar.tsx`
+- `src/App.tsx`
+- `src/pages/ListaPage.tsx`
+- `src/pages/ListaApresentacaoPage.tsx` (novo)
+- `CHANGELOG.md`
+- `AGENTS.md`
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
