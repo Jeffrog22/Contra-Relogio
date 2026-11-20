@@ -358,7 +358,7 @@ export function ListaPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Lista de Atletas</h1>
+      <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Lista Festival</h1>
 
       <Card>
         <CardHeading icone="🏊" titulo="Atletas cadastrados" />

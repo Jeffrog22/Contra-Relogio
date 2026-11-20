@@ -22,6 +22,7 @@ export interface Atleta {
   periodo: Periodo;
   professor: string;
   nivel: string;
+  tipo?: 'Crawl c/ prancha' | 'Crawl s/ prancha';
   tempo?: number;
   medalha?: Medalha;
 }

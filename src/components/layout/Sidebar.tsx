@@ -1,9 +1,32 @@
+import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 
+const ICONE_APRESENTACAO: ReactNode = (
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 6c0-2 4-4 9-4s9 2 9 4" />
+    <path d="M3 6c0 3 3 6 9 6s9-3 9-6" />
+    <circle cx="8" cy="9" r="2" />
+    <circle cx="16" cy="9" r="2" />
+    <path d="M10 9h4" />
+    <path d="M12 11v1" />
+    <path d="M9 13Q12 14 15 13" />
+  </svg>
+);
+
 const LINKS = [
   { to: '/carregar', icone: '📄', rotulo: 'Carregar' },
-  { to: '/lista', icone: '🏊', rotulo: 'Lista de Atletas' },
+  { to: '/lista', icone: '🏊', rotulo: 'Lista Festival' },
+  { to: '/lista-apresentacao', icone: ICONE_APRESENTACAO, rotulo: 'Lista Apresentação' },
   { to: '/balizamento', icone: '🏁', rotulo: 'Balizamento' },
   { to: '/controle', icone: '⏱️', rotulo: 'Controle' },
   { to: '/analise', icone: '📊', rotulo: 'Análise' },
