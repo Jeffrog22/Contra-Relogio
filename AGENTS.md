@@ -705,3 +705,37 @@ pm run build OK
 ### Typecheck
 - Frontend: 0 erros
 - Backend: 0 erros
+
+---
+
+## Sessão: 20/11/2026 — Link compartilhável com dados embutidos (v1.0.0)
+
+### O que foi feito
+- **Nova dependência**: `lz-string` (+ `@types/lz-string`) — compressão URL-safe para embutir estado na URL
+- **`src/utils/compartilhar.ts`** (funções puras): `serializarEstado(dados, max?)` (JSON → `compressToEncodedURIComponent`, teto `MAX_HASH` = 1.500.000 → `null` se passar), `montarLink(base, dados)` (monta `base#d=...`), `desserializarCompartilhado(hash)` (com ou sem prefixo, try/catch, valida payload `v: 1` + arrays + strings dos filtros); tipos `DadosCompartilhados`/`PayloadCompartilhado`
+- **Payload completo**: `atletas`, `atletasApresentacao`, `series`, `periodo`, `generoBalizamento`, `historico` (tema/sidebar ficam de fora — preferência pessoal)
+- **Store**: nova action `importarCompartilhado(dados)` — `set()` substituindo os 6 campos de uma vez
+- **Boot** (`src/main.tsx`): função `importarLinkNoBoot()` roda antes do render — se `location.hash` começa com `#d=`: desserializa → sucesso: importa + toast `Dados do link importados (N no Festival, N na Apresentação)` → falha: toast de link inválido → **sempre** `history.replaceState` limpa o hash (refresh não reimporta); roda fora de effect (sem dupla execução do StrictMode)
+- **TopBar**: botão ghost **🔗** ao lado do tema → valida se há dados (senão toast de erro), monta link com `useAppStore.getState()`, copia via `navigator.clipboard.writeText` com fallback `textarea`+`execCommand`, toast `Link copiado com todos os dados embutidos.`; link grande demais → toast de dados grandes; border do header corrigido (classe `dark:border-r` acidental removida)
+- Testes: `src/utils/compartilhar.test.ts` (6: roundtrip completo, chars URL-safe, hash com/sem prefixo, payload corrompido, shape errado, limite de tamanho) — **70 testes, 0 falhas**; `tsc` 0 erros; `npm run build` OK
+- Docs: CHANGELOG (Added), AGENTS.md (esta sessão)
+
+### Decisões
+- **Substituir e avisar** ao abrir link com dados existentes (escolha do usuário); botão no **TopBar** (escolha do usuário); payload **completo** (escolha do usuário)
+- Hash `#d=` convive com o routing por path do BrowserRouter sem conflito
+- `serializarEstado` aceita `max` opcional p/ testar o limite de tamanho sem gerar 1,5 MB de dados
+- Versão desta entrega: **v1.0.0** (pedido do usuário — commit com `feat!:` para o hook dar bump MAJOR)
+
+### Arquivos
+- src/utils/compartilhar.ts (novo)
+- src/utils/compartilhar.test.ts (novo)
+- src/store/useAppStore.ts
+- src/main.tsx
+- src/components/layout/TopBar.tsx
+- package.json (+lz-string, +@types/lz-string)
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros

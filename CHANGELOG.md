@@ -7,6 +7,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 ### Added
+- **Link compartilhável com dados embutidos**: botão 🔗 no TopBar copia uma URL com todos os dados (Festival, Apresentação, séries, filtros de balizamento e histórico da Análise) comprimidos via `lz-string` no hash `#d=`; ao abrir o link o app importa tudo (substituindo o que houver no navegador do destinatário), avisa por toast e limpa o hash (refresh não reimporta); payload versionado (`v: 1`) com validação de shape; guarda de tamanho (~1,5 M de caracteres) com toast de erro; nova action `importarCompartilhado(dados)` no store; sem backend
+- `src/utils/compartilhar.ts` + 6 testes de roundtrip/validação/tamanho
 - **Lista de Atletas**: botão **"+ Adicionar Atleta"** — modal com formulário manual (nome, idade, categoria, gênero, horário, professor, nível e tempo opcional) que insere na base sem CSV; bloqueia nome duplicado (case-insensitive), calcula `categoriaCalculada`/medalha e regenera as séries automaticamente quando já existem; primeiro uso real do componente `Modal`
 - Store: `adicionarAtleta` (retorna `false` em categoria inválida ou duplicado; gera id, recalcula medalha e re-executa `balizar` se houver séries)
 - **Lista de Atletas**: filtros em chips replicando o padrão da Análise (medalha, categoria, gênero) com ícone **↺ limpar filtros**; **edição por duplo clique** em qualquer coluna — altera o registro-base (raiz), recalcula medalha e sincroniza as séries (nome, idade, categoria via select, gênero, horário, professor, nível e tempo)

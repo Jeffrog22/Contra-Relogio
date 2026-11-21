@@ -11,6 +11,7 @@ import { balizar, reatribuirRaias } from '../utils/balizamento';
 import { categoriaPorIdade, normalizarCategoria } from '../utils/categorias';
 import { calcularMedalha } from '../utils/medalhas';
 import { gerarId } from '../utils/csv';
+import type { DadosCompartilhados } from '../utils/compartilhar';
 
 export interface ToastState {
   tipo: 'sucesso' | 'erro';
@@ -52,6 +53,7 @@ interface AppState {
 
   processarAtletas: (atletas: Atleta[]) => void;
   processarApresentacao: (atletas: Atleta[]) => void;
+  importarCompartilhado: (dados: DadosCompartilhados) => void;
   limparAtletas: (destino?: DestinoLista) => void;
   adicionarAtleta: (
     dados: Omit<Atleta, 'id' | 'categoriaCalculada' | 'medalha'>,
@@ -90,6 +92,16 @@ export const useAppStore = create<AppState>()(
       processarAtletas: (atletas) => set({ atletas, series: [] }),
 
       processarApresentacao: (atletas) => set({ atletasApresentacao: atletas }),
+
+      importarCompartilhado: (dados) =>
+        set({
+          atletas: dados.atletas,
+          atletasApresentacao: dados.atletasApresentacao,
+          series: dados.series,
+          periodo: dados.periodo,
+          generoBalizamento: dados.generoBalizamento,
+          historico: dados.historico,
+        }),
 
       limparAtletas: (destino = 'festival') =>
         destino === 'festival'
