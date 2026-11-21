@@ -681,3 +681,27 @@ pm run build OK
 ### Typecheck
 - Frontend: 0 erros
 - Backend: 0 erros
+
+---
+
+## Sessão: 20/11/2026 — Fix: chip Nível dinâmico na Lista Apresentação + célula econômica da Análise
+
+### O que foi feito
+- **Lista Apresentação**: constante `NIVEIS` hardcoded (`Iniciação A | Iniciação B`) substituída por `niveisPresentes` (`useMemo` com `Set` dos valores não vazios de `atleta.nivel`, ordenado com `localeCompare('pt-BR')`) + chip `Todos` — mesmo padrão de `categoriasPresentes` da Lista Festival/Análise; filtro `nivel`/limpar ↺ inalterados
+- **Análise**: célula do grid de alunos (colunas de ano) virou layout de **2 linhas** — linha 1: `formatTempo` + `MedalhaBadge` lado a lado (`flex items-center gap-1.5` → badge com largura ajustada ao conteúdo, não estica); linha 2: categoria `text-[10px]` cinza; `MedalhaBadge` intocado (demais telas sem mudança)
+- Verificação: `npx tsc -b --force` 0 erros; **64 testes, 0 falhas**; `npm run build` OK
+- Docs: CHANGELOG (Fixed), AGENTS.md (esta sessão)
+
+### Decisões
+- Nível vazio (`''`) não gera chip (só casa com "Todos")
+- Se o nível ativo sumir da base após novo upload, o chip some mas o filtro permanece ativo — resolver com ↺ (mesmo comportamento já existente dos chips de categoria)
+
+### Arquivos
+- src/pages/ListaApresentacaoPage.tsx
+- src/pages/AnalisePage.tsx
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros

@@ -46,6 +46,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - **Menu/sidebar**: "Lista de Atletas" → **"Lista Festival"** (rótulo e H1); novo item **"Lista Apresentação"** com rota `/lista-apresentacao`
 
 ### Fixed
+- **Lista Apresentação**: chip de filtro **Nível** lê os valores reais da coluna `nivel` do CSV (dinâmico, como os chips de categoria) — estava hardcoded com "Iniciação A/B" (valores antigos)
+- **Análise**: célula do grid de alunos no layout econômico de 2 linhas — linha 1: tempo + badge da medalha lado a lado (badge com largura ajustada ao conteúdo), linha 2: categoria menor em cinza
 - Badge da versão travado em `0.3.2` no deploy: a sincronização `package.json`↔tag virou ciclo fechado — `.githooks/semver-bump.sh` (fonte única do bump, usada por `commit-msg` e `post-commit`) + **`post-commit` com auto-reparo**: como o git grava o tree a partir do índice em memória, o staging do `commit-msg` ficava fora do commit; o `post-commit` detecta a divergência e faz `git commit --amend` (com guard anti-recursão) **antes** de criar a tag. O fallback do build no Cloudflare Pages (clone sem tags) fica sempre correto
 - Upload de CSV com BOM UTF-8 (EF BB BF) não falha mais na validação de colunas obrigatórias (`parseCSVAtletas` e `parseCSVHistorico` removem o BOM antes do parsing; `chave()` ignora `\uFEFF` residual)
 - Sinônimos de coluna: histórico aceita `atleta` no lugar de `aluno`; atletas aceita `aluno`/`atleta` no lugar de `nome` (cabeçalho repetido com sinônimo também é ignorado); mensagem de coluna ausente agora lista os sinônimos aceitos. Validado com `ResultadoHistoricoGeral.csv` real (BOM + `;` + `atleta`): 97 eventos, 0 erros

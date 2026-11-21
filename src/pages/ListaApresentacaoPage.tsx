@@ -354,10 +354,14 @@ export function ListaApresentacaoPage() {
 
   const chipClasse = '!px-3 !py-1 !text-xs';
 
+  const niveisPresentes = useMemo(() => {
+    const presentes = new Set(atletas.map((atleta) => atleta.nivel.trim()).filter(Boolean));
+    return [...presentes].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [atletas]);
+
   const NIVEIS: { valor: string; rotulo: string }[] = [
     { valor: 'todos', rotulo: 'Todos' },
-    { valor: 'Iniciação A', rotulo: 'Iniciação A' },
-    { valor: 'Iniciação B', rotulo: 'Iniciação B' },
+    ...niveisPresentes.map((nivel) => ({ valor: nivel, rotulo: nivel })),
   ];
 
   const TIPOS: { valor: string; rotulo: string }[] = [

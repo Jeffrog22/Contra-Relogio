@@ -107,9 +107,11 @@ export function AnalisePage() {
         const evento = linha.porAno.get(anoColuna);
         if (!evento) return <span className="text-gray-400 dark:text-gray-500">—</span>;
         return (
-          <span className="flex flex-col gap-1">
-            <span className="font-mono tabular-nums text-xs">{formatTempo(evento.tempo)}</span>
-            <MedalhaBadge medalha={evento.medalha} />
+          <span className="flex flex-col gap-0.5">
+            <span className="flex items-center gap-1.5">
+              <span className="font-mono tabular-nums text-xs">{formatTempo(evento.tempo)}</span>
+              <MedalhaBadge medalha={evento.medalha} />
+            </span>
             <span className="text-[10px] text-gray-400 dark:text-gray-500">{evento.categoria}</span>
           </span>
         );
