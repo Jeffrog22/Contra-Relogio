@@ -81,7 +81,7 @@ Regras:
 - **Limites de medalha são estritos no OURO**: faixa "OURO < 28,00" significa que 28,00 exato já é PRATA; 30,00 ainda é PRATA (inclusivo); 30,01 é BRONZE. Mesma lógica nas demais faixas (`src/utils/medalhas.ts`).
 - **Persistência**: Zustand `persist` na chave `festival-storage`; tema também em `festival-tema` (lido em `main.tsx` para evitar flash do dark mode).
 - **Impressão**: chrome com classe `no-print`; áreas de impressão com `print-area` (+ wrapper `hidden print:block`). CSS em `src/index.css` (`@media print`).
-- **Testes**: Vitest em ambiente `node` (testes só de `src/utils/**`, co-localizados `*.test.ts`); `npm test` deve passar com 0 falhas antes de qualquer commit.
+- **Testes**: Vitest; testes de `src/utils/**` rodam em ambiente `node` (co-localizados `*.test.ts`) e testes de hook (`src/hooks/**`) usam docblock `// @vitest-environment jsdom` na linha 1 — **nunca** trocar o `environment` global para jsdom (quebra `exemplos.test.ts`, que usa `import.meta.url`/`node:fs`); testes com `renderHook` precisam de `cleanup()` no `afterEach` (sem `globals: true` o auto-cleanup do RTL não registra); `npm test` deve passar com 0 falhas antes de qualquer commit.
 - **CSV tolera BOM UTF-8**: Excel/Notepad/VS Code salvam "UTF-8 with BOM" (EF BB BF) e o BOM vira `\uFEFF` no primeiro header (`\uFEFFano`), quebrando validação de coluna obrigatória. `removerBOM()` em `src/utils/csv.ts` stripa na entrada dos dois parsers e `chave()` remove `\uFEFF` residual — **não depender do PapaParse** para isso (o fix deles só veio na 5.5.4).
 - **Sinônimos de coluna CSV**: histórico aceita `atleta`→`aluno`; atletas aceita `aluno`/`atleta`→`nome` (mapas `ALIASES_*` aplicados no `transformHeader`). Arquivos reais do Excel usam `;` como delimitador (Papa auto-detecta) e podem nomear a coluna diferente do PRD — validar sempre com o arquivo real do usuário quando possível.
 - **Versão exibida no app**: `__APP_VERSION__` é injetado pelo `define` do `vite.config.ts` via `git describe --tags --abbrev=0` (tag real). O hook **`commit-msg`** (.githooks) atualiza o `package.json` em disco e o **`post-commit` garante que a versão entre no commit** com `git commit --amend` (guard `SEMVER_SELFCHECK` anti-recursão) **antes de criar a tag** — necessário porque o git grava o tree do commit a partir do índice em memória, carregado antes do `commit-msg` (o staging do hook fica de fora). Fonte única do bump: `.githooks/semver-bump.sh`. Assim o fallback do build no Cloudflare Pages (clone sem tags) fica sempre correto.
@@ -90,6 +90,7 @@ Regras:
 - **Typo perigoso já acontecido**: `obrigigatoria` vs `obrigatoria` em interpolação de template string causou `ReferenceError` silencioso só no runtime dos testes — revisar identificadores com acento/typos ao revisar diffs.
 - **Repo usa o kit de documentação**: hook `.githooks/post-commit` cria tags SemVer; sessões registradas via `scripts/nova-sessao.ps1`; nunca criar SESSION.md.
 - **Adição manual de atleta**: `adicionarAtleta(dados)` no store retorna `boolean` (`false` = categoria inválida ou nome duplicado case-insensitive — toast emitido pelo próprio store); monta o `Atleta` completo (`gerarId`, `categoriaPorIdade`, `calcularMedalha`) e re-executa `balizar()` **só se já existirem séries** (mesmo descarte de ajustes manuais dos filtros). `Modal` (DS) teve o primeiro uso real aqui.
+- **Cronômetro da Controle**: estado é **local do hook** `useCronometro` (não na store) — a store só recebe o resultado via `atualizarTempoAtleta(id, segundos)`; `CronometroSerie` é um `Modal` do DS controlado pela `ControlePage` (prop `onFechar`); a série exibida é **derivada pelo número** (`series.find(s => s.numero === n)`) para nunca ficar obsoleta após gravar tempo; fechar com timer ativo usa `window.confirm` e descarta; auto-conclusão via `useEffect` + guard `useRef` (nunca chamar callback durante render); atleta com tempo pré-existente é marcado `done` no `iniciar()` e não recebe botão.
 
 ---
 
@@ -733,6 +734,41 @@ pm run build OK
 - src/main.tsx
 - src/components/layout/TopBar.tsx
 - package.json (+lz-string, +@types/lz-string)
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 24/11/2026 — Cronômetro de série na aba Controle (modal)
+
+### O que foi feito
+- **`src/hooks/useCronometro.ts`** (novo): hook com estado **local** (não na store) — `running`, `selectedId`, `done` (Set), `startedAt`, `tempoMestre`; ticker de 30 ms via `setInterval` + `Date.now()`; `iniciar()` marca como `done` quem já tem tempo e só começa quem não tem (se ninguém tiver, não liga); `parar(id)` grava `atualizarTempoAtleta(id, segundos)` (2 casas), emite toast `Tempo de X registrado.`, avança `selectedId` para o próximo não-concluído calculado com `novoDone` local (nunca com `done` stale), congela o tempo da raia em `tempos` e desliga o `running` quando todos concluem; `reset()` limpa tudo; `temAlguemParaCronometrar` para habilitar o botão; `ids`/`temAlguemParaCronometrar` via `useMemo`
+- **`src/components/ui/CronometroSerie.tsx`** (novo): modal do DS com relógio mestre, uma linha por atleta (raia, nome, relógio `00''00`, status Pronto/Ativo/Aguardando/Concluído, botão Iniciar/Parar), contagem X/Y, botões "Iniciar série"/"Zerar"; `atletas` memoizado (`useMemo` no `serie`) para o intervalo não reiniciar a cada tick; auto-conclusão em `useEffect` + guard `useRef` (toast "Série completa!" + fecha) — **nunca** callback durante render; `fechar()` usa `window.confirm` quando `running` e chama `reset()` + `onFechar`
+- **`src/pages/ControlePage.tsx`**: chips de série agora **selecionam** (guardam o **número**, não o objeto) + botão "Cronometrar série" abre; série ativa derivada por `series.find(s => s.numero === n)` (nunca obsoleta após gravar tempo); `onFechar` fecha o modal mantendo a seleção
+- **Ambiente de teste**: docblock `// @vitest-environment jsdom` na linha 1 de `useCronometro.test.ts` (jsdom só ali; global continua `node` porque `exemplos.test.ts` precisa de `import.meta.url`/`node:fs`); removido `setupFiles` do `vite.config.ts` e deletado `src/test-setup.ts` (harness falso que não servia para `createRoot`); `afterEach` com `cleanup()` + `vi.useRealTimers()` + `vi.restoreAllMocks()`
+- Testes: **8** em `useCronometro.test.ts` (iniciar, tick com fake timers, parar grava/avança, parar congela raia × mestre segue, parar sem iniciar, todasConcluidas, reset, formato `formatTempo`) — **78 testes, 0 falhas**; `tsc -b --force` 0 erros; `npm run build` OK
+- Docs: CHANGELOG (Added), AGENTS.md (Contexto Crítico: testes agora incluem `src/hooks/**` + esta sessão)
+
+### Decisões
+- **jsdom por arquivo** (docblock), nunca global — regra registrada no Contexto Crítico
+- Estado do cronômetro é local ao hook; a store só recebe o resultado final via `atualizarTempoAtleta` (sem re-render por tick de 30 ms)
+- Série do modal derivada **pelo número** para sempre refletir o estado fresco da store
+- Atleta com tempo pré-existente entra como `done` no `iniciar()` e não exibe botão (evita série impossível de concluir)
+- Chip seleciona, botão abre (dois passos) — evita abrir o modal sem querer ao filtrar
+- Fechar com timer ativo → `window.confirm` descartando; auto-conclusão fecha com toast (em vez de mostrar tela "Concluído")
+
+### Arquivos
+- src/hooks/useCronometro.ts (novo)
+- src/hooks/useCronometro.test.ts (novo)
+- src/components/ui/CronometroSerie.tsx (novo)
+- src/pages/ControlePage.tsx
+- vite.config.ts
+- src/test-setup.ts (deletado)
+- package.json (+@testing-library/react, +jsdom — instalados na sessão anterior)
 - CHANGELOG.md
 - AGENTS.md
 

@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { MedalhaBadge } from '../components/ui/MedalhaBadge';
 import { TabelaGenerica } from '../components/ui/TabelaGenerica';
+import { CronometroSerie } from '../components/ui/CronometroSerie';
 
 function tempoParaMascara(tempo: number | undefined): string {
   if (!tempo) return '';
@@ -59,6 +60,19 @@ export function ControlePage() {
     })),
   }));
 
+  const [modalAberto, setModalAberto] = useState(false);
+  const [serieSelecionada, setSerieSelecionada] = useState<number | null>(null);
+  const serieAtiva = series.find((s) => s.numero === serieSelecionada) ?? null;
+
+  function abrirCronometro() {
+    if (!serieAtiva) return;
+    setModalAberto(true);
+  }
+
+  function fecharCronometro() {
+    setModalAberto(false);
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
@@ -74,7 +88,31 @@ export function ControlePage() {
           </p>
 
           {linhas.length > 0 ? (
-            <TabelaGenerica
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  Série
+                </span>
+                {series.map((serie) => (
+                  <Button
+                    key={serie.numero}
+                    variante={serieSelecionada === serie.numero ? 'primary' : 'secondary'}
+                    onClick={() => setSerieSelecionada(serie.numero)}
+                    className="!px-3 !py-1 !text-xs"
+                  >
+                    {serie.numero}
+                  </Button>
+                ))}
+                <Button
+                  variante="primary"
+                  onClick={abrirCronometro}
+                  disabled={!serieSelecionada}
+                  className="ml-auto"
+                >
+                  Cronometrar série
+                </Button>
+              </div>
+              <TabelaGenerica
               className="mb-4"
               colunas={[
                 {
@@ -113,6 +151,7 @@ export function ControlePage() {
               chaveItem={(linha) => linha.key}
               vazio="Nenhuma série. Execute o balizamento primeiro."
             />
+            </div>
           ) : (
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {atletas.length === 0 ? (
@@ -180,6 +219,9 @@ export function ControlePage() {
           </div>
         ))}
       </div>
+      {modalAberto && serieAtiva && (
+        <CronometroSerie serie={serieAtiva} onFechar={fecharCronometro} />
+      )}
     </div>
   );
 }
