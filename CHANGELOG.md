@@ -6,8 +6,21 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
+### Added
+- **Contraste visual entre séries** nas telas de **Balizamento** e **Controle**: linhas com tinta alternada por índice (`bg-primary-50/70` nas séries pares, neutra nas ímpares, com hover próprio) e recorte `border-t-2` primary na primeira linha de cada série; `TabelaGenerica` ganhou a prop opcional `classeLinha` + export `classeLinhaSerie(indice, primeira)` (autocontida, sem conflito de classes de borda) — a área de impressão ficou intacta
+- **Snapshot das séries por filtro** na store (`seriesPorFiltro` + chave `periodo|genero`): trocar período/gênero salva o estado atual e restaura o do destino (ou gera na falta) — **edições manuais (drag/✕) sobrevivem à troca de filtro**; clique no chip de filtro já ativo virou no-op (não regenera mais)
+- **Upload de novo CSV preserva as séries manuais por nome** quando `edicoesManuais` está ativo (novo campo persistido): os ids mudam a cada parse, então o re-mapeamento casa por `nome.trim().toLowerCase()` — mantidos preservam posição e exclusões, quem sumiu sai das séries, e **apenas atletas realmente novos** entram (regra: mesma categoria+nível+gênero com vaga → mesmo gênero com vaga → série nova); snapshots por filtro atualizados junto
+- `src/utils/edicaoSeries.ts`: `chaveFiltro`, `separarChaveFiltro`, `nomeChave`, `moverAtleta`, `remapearPorNome`, `inserirAusentes` + 15 testes
+- `src/store/useAppStore.test.ts`: 9 testes (snapshot por filtro, upload com/sem preservação, exclusões, séries vazias, sync de snapshots, limpar) com docblock `// @vitest-environment jsdom`
+- `filtrarAtletas()` exportado de `src/utils/balizamento.ts` (reutilizado por `balizar()` e pela store)
+
+### Fixed
+- **Raias duplicadas no drag**: mover um atleta para uma série que já tem 4 atletas gerava série de 5+ → `reatribuirRaias` repetia a raia 1 no 5º; agora `moverAtleta()` bloqueia a movimentação com toast **"Série N já está completa (4 atletas)."**
+- **`removerAtletaDaSerie` descarta séries que ficam vazias** (antes só o caminho do drag filtrava — comportamento alinhado ao documentado no AGENTS.md)
+
 ### Changed
 - **Chip de raia do cronômetro**: `nomeCurto()` (`src/utils/nomes.ts`) — 1º e 2º nome do aluno **desconsiderando preposições/contrações** (`de, do, da, dos, das, no, na, nos, nas, em, com, por, para, a, o`) no texto e na contagem (ex.: `Maria de Paula Silva` → `Maria Paula`); `title` mantém o nome completo no hover
+- `importarCompartilhado` liga `edicoesManuais` quando o link traz séries (as séries recebidas são potencialmente editadas à mão e passam a sobreviver ao próximo upload)
 
 ### Fixed
 - **Controle**: campo de tempo não refletia o valor gravado pelo cronômetro da série — `TempoInput` mantinha estado local inicializado só na montagem; agora sincroniza com a prop `tempo` quando o valor da store diverge do digitado (`parseTempo(valor) !== tempo`), sem interferir na digitação

@@ -7,8 +7,15 @@ import type {
   PeriodoOpcao,
   Serie,
 } from '../types';
-import { balizar, reatribuirRaias } from '../utils/balizamento';
+import { balizar, filtrarAtletas, reatribuirRaias } from '../utils/balizamento';
 import { categoriaPorIdade, normalizarCategoria } from '../utils/categorias';
+import {
+  chaveFiltro,
+  inserirAusentes,
+  nomeChave,
+  remapearPorNome,
+  separarChaveFiltro,
+} from '../utils/edicaoSeries';
 import { calcularMedalha } from '../utils/medalhas';
 import { gerarId } from '../utils/csv';
 import type { DadosCompartilhados } from '../utils/compartilhar';
@@ -40,10 +47,49 @@ function aplicarAtualizacao(atual: Atleta, campos: Partial<Atleta>): Atleta | nu
   return atualizado;
 }
 
+/**
+ * Preserva as séries manuais ao receber uma nova base de atletas:
+ * re-mapeia por nome (ids mudam a cada CSV), remove quem sumiu e insere
+ * apenas quem é realmente novo (exclusões manuais não voltam).
+ * Vale para a série ao vivo e para todos os snapshots por filtro.
+ */
+function preservarSeries(
+  series: Serie[],
+  seriesPorFiltro: Record<string, Serie[]>,
+  atletas: Atleta[],
+  anteriores: Atleta[],
+  periodo: PeriodoOpcao,
+  genero: GeneroOpcao,
+): { series: Serie[]; seriesPorFiltro: Record<string, Serie[]> } {
+  const nomesAnteriores = new Set(anteriores.map((atleta) => nomeChave(atleta.nome)));
+  const novosDe = (p: PeriodoOpcao, g: GeneroOpcao) =>
+    filtrarAtletas(atletas, p, g).filter(
+      (atleta) => !nomesAnteriores.has(nomeChave(atleta.nome)),
+    );
+
+  const novasSeries = inserirAusentes(
+    remapearPorNome(series, atletas),
+    novosDe(periodo, genero),
+  );
+
+  const novosSnapshots: Record<string, Serie[]> = {};
+  for (const [chave, snapshot] of Object.entries(seriesPorFiltro)) {
+    const { periodo: p, genero: g } = separarChaveFiltro(chave);
+    novosSnapshots[chave] = inserirAusentes(
+      remapearPorNome(snapshot, atletas),
+      novosDe(p, g),
+    );
+  }
+
+  return { series: novasSeries, seriesPorFiltro: novosSnapshots };
+}
+
 interface AppState {
   atletas: Atleta[];
   atletasApresentacao: Atleta[];
   series: Serie[];
+  seriesPorFiltro: Record<string, Serie[]>;
+  edicoesManuais: boolean;
   periodo: PeriodoOpcao;
   generoBalizamento: GeneroOpcao;
   historico: EventoHistorico[];
@@ -82,6 +128,8 @@ export const useAppStore = create<AppState>()(
       atletas: [],
       atletasApresentacao: [],
       series: [],
+      seriesPorFiltro: {},
+      edicoesManuais: false,
       periodo: 'geral',
       generoBalizamento: 'todos',
       historico: [],
@@ -89,7 +137,21 @@ export const useAppStore = create<AppState>()(
       sidebarAberta: true,
       toast: null,
 
-      processarAtletas: (atletas) => set({ atletas, series: [] }),
+      processarAtletas: (atletas) =>
+        set((estado) => {
+          if (!estado.edicoesManuais) {
+            return { atletas, series: [], seriesPorFiltro: {}, edicoesManuais: false };
+          }
+          const preservado = preservarSeries(
+            estado.series,
+            estado.seriesPorFiltro,
+            atletas,
+            estado.atletas,
+            estado.periodo,
+            estado.generoBalizamento,
+          );
+          return { atletas, ...preservado };
+        }),
 
       processarApresentacao: (atletas) => set({ atletasApresentacao: atletas }),
 
@@ -98,6 +160,8 @@ export const useAppStore = create<AppState>()(
           atletas: dados.atletas,
           atletasApresentacao: dados.atletasApresentacao,
           series: dados.series,
+          seriesPorFiltro: {},
+          edicoesManuais: dados.series.length > 0,
           periodo: dados.periodo,
           generoBalizamento: dados.generoBalizamento,
           historico: dados.historico,
@@ -105,7 +169,7 @@ export const useAppStore = create<AppState>()(
 
       limparAtletas: (destino = 'festival') =>
         destino === 'festival'
-          ? set({ atletas: [], series: [] })
+          ? set({ atletas: [], series: [], seriesPorFiltro: {}, edicoesManuais: false })
           : set({ atletasApresentacao: [] }),
 
       adicionarAtleta: (dados, destino = 'festival') => {
@@ -141,6 +205,20 @@ export const useAppStore = create<AppState>()(
         }
 
         const atletas = [...estado.atletas, novo];
+
+        if (estado.edicoesManuais) {
+          const preservado = preservarSeries(
+            estado.series,
+            estado.seriesPorFiltro,
+            atletas,
+            estado.atletas,
+            estado.periodo,
+            estado.generoBalizamento,
+          );
+          set({ atletas, ...preservado });
+          return true;
+        }
+
         const series =
           estado.series.length > 0
             ? balizar(atletas, estado.periodo, estado.generoBalizamento)
@@ -151,19 +229,35 @@ export const useAppStore = create<AppState>()(
       },
 
       setPeriodo: (periodo) => {
-        set({ periodo });
-        const { atletas, generoBalizamento } = get();
-        if (atletas.length > 0) {
-          set({ series: balizar(atletas, periodo, generoBalizamento) });
-        }
+        const estado = get();
+        if (periodo === estado.periodo) return;
+        const chaveAtual = chaveFiltro(estado.periodo, estado.generoBalizamento);
+        const chaveNova = chaveFiltro(periodo, estado.generoBalizamento);
+        const snapshots = { ...estado.seriesPorFiltro, [chaveAtual]: estado.series };
+        const snapshotDestino = snapshots[chaveNova];
+        delete snapshots[chaveNova];
+        const series =
+          snapshotDestino ??
+          (estado.atletas.length > 0
+            ? balizar(estado.atletas, periodo, estado.generoBalizamento)
+            : estado.series);
+        set({ periodo, series, seriesPorFiltro: snapshots });
       },
 
       setGeneroBalizamento: (genero) => {
-        set({ generoBalizamento: genero });
-        const { atletas, periodo } = get();
-        if (atletas.length > 0) {
-          set({ series: balizar(atletas, periodo, genero) });
-        }
+        const estado = get();
+        if (genero === estado.generoBalizamento) return;
+        const chaveAtual = chaveFiltro(estado.periodo, estado.generoBalizamento);
+        const chaveNova = chaveFiltro(estado.periodo, genero);
+        const snapshots = { ...estado.seriesPorFiltro, [chaveAtual]: estado.series };
+        const snapshotDestino = snapshots[chaveNova];
+        delete snapshots[chaveNova];
+        const series =
+          snapshotDestino ??
+          (estado.atletas.length > 0
+            ? balizar(estado.atletas, estado.periodo, genero)
+            : estado.series);
+        set({ generoBalizamento: genero, series, seriesPorFiltro: snapshots });
       },
 
       executarBalizamento: (silencioso = false) => {
@@ -212,6 +306,17 @@ export const useAppStore = create<AppState>()(
                 item.atleta.id === id ? { ...item, atleta: atualizado } : item,
               ),
             })),
+            seriesPorFiltro: Object.fromEntries(
+              Object.entries(estado.seriesPorFiltro).map(([chave, snapshot]) => [
+                chave,
+                snapshot.map((serie) => ({
+                  ...serie,
+                  atletas: serie.atletas.map((item) =>
+                    item.atleta.id === id ? { ...item, atleta: atualizado } : item,
+                  ),
+                })),
+              ]),
+            ),
           };
         }),
 
@@ -219,18 +324,24 @@ export const useAppStore = create<AppState>()(
 
       removerAtletaDaSerie: (serieNumero, atletaId) =>
         set((estado) => ({
-          series: estado.series.map((serie) =>
-            serie.numero === serieNumero
-              ? reatribuirRaias({
-                  ...serie,
-                  atletas: serie.atletas.filter((item) => item.atleta.id !== atletaId),
-                })
-              : serie,
-          ),
+          edicoesManuais: true,
+          series: estado.series
+            .map((serie) =>
+              serie.numero === serieNumero
+                ? reatribuirRaias({
+                    ...serie,
+                    atletas: serie.atletas.filter((item) => item.atleta.id !== atletaId),
+                  })
+                : serie,
+            )
+            .filter((serie) => serie.atletas.length > 0),
         })),
 
       reordenarSeries: (novasSeries) =>
-        set({ series: novasSeries.map((serie) => reatribuirRaias(serie)) }),
+        set({
+          edicoesManuais: true,
+          series: novasSeries.map((serie) => reatribuirRaias(serie)),
+        }),
 
       adicionarHistorico: (eventos) =>
         set((estado) => ({ historico: [...estado.historico, ...eventos] })),
@@ -263,12 +374,23 @@ export const useAppStore = create<AppState>()(
         atletas: estado.atletas,
         atletasApresentacao: estado.atletasApresentacao,
         series: estado.series,
+        seriesPorFiltro: estado.seriesPorFiltro,
+        edicoesManuais: estado.edicoesManuais,
         periodo: estado.periodo,
         generoBalizamento: estado.generoBalizamento,
         historico: estado.historico,
         tema: estado.tema,
         sidebarAberta: estado.sidebarAberta,
       }),
+      merge: (persistido, atual) => {
+        const parcial = persistido as Partial<AppState> | undefined;
+        return {
+          ...atual,
+          ...parcial,
+          seriesPorFiltro: parcial?.seriesPorFiltro ?? {},
+          edicoesManuais: parcial?.edicoesManuais ?? false,
+        };
+      },
     },
   ),
 );

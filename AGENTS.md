@@ -81,7 +81,7 @@ Regras:
 - **Limites de medalha são estritos no OURO**: faixa "OURO < 28,00" significa que 28,00 exato já é PRATA; 30,00 ainda é PRATA (inclusivo); 30,01 é BRONZE. Mesma lógica nas demais faixas (`src/utils/medalhas.ts`).
 - **Persistência**: Zustand `persist` na chave `festival-storage`; tema também em `festival-tema` (lido em `main.tsx` para evitar flash do dark mode).
 - **Impressão**: chrome com classe `no-print`; áreas de impressão com `print-area` (+ wrapper `hidden print:block`). CSS em `src/index.css` (`@media print`).
-- **Testes**: Vitest; testes de `src/utils/**` rodam em ambiente `node` (co-localizados `*.test.ts`) e testes de hook (`src/hooks/**`) usam docblock `// @vitest-environment jsdom` na linha 1 — **nunca** trocar o `environment` global para jsdom (quebra `exemplos.test.ts`, que usa `import.meta.url`/`node:fs`); testes com `renderHook` precisam de `cleanup()` no `afterEach` (sem `globals: true` o auto-cleanup do RTL não registra); `npm test` deve passar com 0 falhas antes de qualquer commit.
+- **Testes**: Vitest; testes de `src/utils/**` rodam em ambiente `node` (co-localizados `*.test.ts`) e testes de hook (`src/hooks/**`) e de store (`src/store/**`) usam docblock `// @vitest-environment jsdom` na linha 1 — **nunca** trocar o `environment` global para jsdom (quebra `exemplos.test.ts`, que usa `import.meta.url`/`node:fs`); testes com `renderHook` precisam de `cleanup()` no `afterEach` (sem `globals: true` o auto-cleanup do RTL não registra); `npm test` deve passar com 0 falhas antes de qualquer commit.
 - **CSV tolera BOM UTF-8**: Excel/Notepad/VS Code salvam "UTF-8 with BOM" (EF BB BF) e o BOM vira `\uFEFF` no primeiro header (`\uFEFFano`), quebrando validação de coluna obrigatória. `removerBOM()` em `src/utils/csv.ts` stripa na entrada dos dois parsers e `chave()` remove `\uFEFF` residual — **não depender do PapaParse** para isso (o fix deles só veio na 5.5.4).
 - **Sinônimos de coluna CSV**: histórico aceita `atleta`→`aluno`; atletas aceita `aluno`/`atleta`→`nome` (mapas `ALIASES_*` aplicados no `transformHeader`). Arquivos reais do Excel usam `;` como delimitador (Papa auto-detecta) e podem nomear a coluna diferente do PRD — validar sempre com o arquivo real do usuário quando possível.
 - **Versão exibida no app**: `__APP_VERSION__` é injetado pelo `define` do `vite.config.ts` via `git describe --tags --abbrev=0` (tag real). O hook **`commit-msg`** (.githooks) atualiza o `package.json` em disco e o **`post-commit` garante que a versão entre no commit** com `git commit --amend` (guard `SEMVER_SELFCHECK` anti-recursão) **antes de criar a tag** — necessário porque o git grava o tree do commit a partir do índice em memória, carregado antes do `commit-msg` (o staging do hook fica de fora). Fonte única do bump: `.githooks/semver-bump.sh`. Assim o fallback do build no Cloudflare Pages (clone sem tags) fica sempre correto.
@@ -91,6 +91,10 @@ Regras:
 - **Repo usa o kit de documentação**: hook `.githooks/post-commit` cria tags SemVer; sessões registradas via `scripts/nova-sessao.ps1`; nunca criar SESSION.md.
 - **Adição manual de atleta**: `adicionarAtleta(dados)` no store retorna `boolean` (`false` = categoria inválida ou nome duplicado case-insensitive — toast emitido pelo próprio store); monta o `Atleta` completo (`gerarId`, `categoriaPorIdade`, `calcularMedalha`) e re-executa `balizar()` **só se já existirem séries** (mesmo descarte de ajustes manuais dos filtros). `Modal` (DS) teve o primeiro uso real aqui.
 - **Cronômetro da Controle (reescrito)**: estado **local do hook** `useCronometro` (não na store) — `pendentes` (chegadas em sequência ordinal) + `atribuicoes` (ordem→atletaId); **clique curto no Parar** captura o tempo atual (1 clique = 1 chegada, até a série toda → para sozinho + toast "Todas as chegadas capturadas!"); **segurar Parar 3s zera** tempo e pendentes (botões com `user-select:none`, contextmenu bloqueado e `touch-callout:none`); **auto-atribuição do último chip**: com exatamente 1 chip livre e 1 pendente sem chip, atribui sozinho (2+ chips espera o arraste; devolver chip à zona `chips-livre` desatribui); **Registrar** grava via `atualizarTempoAtleta(id, Number((ms/1000).toFixed(2)))` e fecha o modal. Modal **não arrasta** (fixo centralizado rente ao topo); quem arrasta são os **botões Iniciar/Parar** (pointer events + limiar 6px, posição em `localStorage` `festival-crono-btns`); chips de raia usam `@dnd-kit` (droppable = célula Baliza `pend-{ordem}` e zona `chips-livre`).
+- **Snapshot por filtro + flag de edição**: store tem `seriesPorFiltro: Record<string, Serie[]>` (chave `chaveFiltro(periodo, genero)` = `` `${periodo}|${genero}` ``) e `edicoesManuais: boolean` (ambos no `partialize` de `festival-storage`, com `merge` custom que default `{} / false` para localStorage antigo). `setPeriodo`/`setGeneroBalizamento` **salvam as séries atuais na chave atual e restauram a do destino** (na falta, `balizar()`); o snapshot do destino é apagado ao restaurar (invariante: a chave atual nunca fica no mapa) e clicar no chip já ativo é **no-op**. `edicoesManuais` sobe em `removerAtletaDaSerie`/`reordenarSeries` e só desce em `limparAtletas('festival')`, `processarAtletas` sem edições e `importarCompartilhado` (que liga `true` se o link traz séries); `executarBalizamento` (Atualizar) regenera sob demanda e **não** mexe na flag. `atualizarAtleta` sincroniza as cópias também nos snapshots.
+- **Upload com edições preserva por nome**: `preservarSeries()` (helper da store) roda em `processarAtletas` (só com `edicoesManuais`) e em `adicionarAtleta` — `remapearPorNome` casa por `nomeChave()` = `nome.trim().toLowerCase()` (**os ids mudam a cada `gerarId()`**, por isso é por nome) e `inserirAusentes` insere **apenas quem é realmente novo** (nome ausente da base anterior — exclusões manuais **não voltam**); regra de encaixe: mesma `categoriaOficial+nivel+genero` com <4 → mesma série; senão mesmo `genero` com <4 → anexa; senão cria série (`numero = max+1`); snapshots por filtro atualizados com o filtro de cada um. Helpers puros em `src/utils/edicaoSeries.ts`.
+- **Drag com teto de 4**: `moverAtleta(series, atletaId, de, para, alvoId?)` em `edicaoSeries.ts` retorna `null` quando a série destino tem **4 atletas** (a página mostra toast `Série N já está completa (4 atletas).` e aborta) e filtra séries que ficam vazias — série com 5+ faria `reatribuirRaias` repetir raia 1 (`raias[i] ?? 1`). `removerAtletaDaSerie` também filtra vazias. Raias de série ≤4 são sempre únicas (`raiasDaSerie`: 4→[1,2,3,4], 3→[2,3,4], 2→[1,2], 1→[1]).
+- **Contraste de séries na UI**: `classeLinhaSerie(indice, primeira)` exportada de `TabelaGenerica` — tinta alternada por **índice no array** (não por `numero`, por causa das lacunas de numeração), `border-b` fino + `border-t-2 border-t-primary-300` na **primeira linha de cada série**; a prop `classeLinha(item)` do `TabelaGenerica` substitui as classes padrão da `<tr>` (autocontida, sem conflito). `BalizamentoPage`/`ControlePage` adicionam `indiceSerie`/`primeira` às linhas e `LinhaSorteavel` recebe a mesma classe; **área de impressão intocada**.
 
 ---
 
@@ -852,6 +856,43 @@ pm run build OK
 - src/utils/nomes.ts (novo)
 - src/utils/nomes.test.ts (novo)
 - src/components/ui/CronometroSerie.tsx
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 25/11/2026 — Contraste de séries + snapshot por filtro + teto de 4 no drag
+
+### O que foi feito
+- **Contraste visual entre séries** (Balizamento + Controle): `TabelaGenerica` ganhou a prop opcional `classeLinha(item)` (substitui as classes padrão da `<tr>` quando fornecida) e o export `classeLinhaSerie(indice, primeira)` — função autocontida com `border-b border-b-gray-100 dark:border-b-gray-800`, tinta alternada **por índice no array** (par: `bg-primary-50/70 hover:bg-primary-100/70 dark:bg-primary-900/25 dark:hover:bg-primary-900/40`; ímpar: hover neutro padrão) e `border-t-2 border-t-primary-300 dark:border-t-primary-700` na primeira linha de cada série; `BalizamentoPage`/`ControlePage` passam `indiceSerie`/`primeira` nas linhas e `LinhaSorteavel` recebe a mesma classe via prop `classe` (removido o `LINHA_CLASSE` fixo; a classe de drag em arraste ficou só `opacity-60 relative z-10` para não brigar com o fundo alternado). Área de impressão (`print-area`) intocada
+- **Fix raias duplicadas**: novo `src/utils/edicaoSeries.ts` com `moverAtleta(series, atletaId, de, para, alvoId?)` — retorna `null` (não mexe em nada) se a série destino tem 4 atletas ou se algo não existe; filtra séries que ficam vazias; `aoTerminarDrag` da `BalizamentoPage` virou checagem de teto + toast **`Série {n} já está completa (4 atletas).`** + chamada única de `moverAtleta` (removido o `arrayMove` inline e o mapa/filter duplicado); `removerAtletaDaSerie` da store agora filtra séries vazias (antes só o caminho do drag filtrava)
+- **Snapshot por filtro**: store ganhou `seriesPorFiltro: Record<string, Serie[]>` (chave `` `${periodo}|${genero}` ``) e `edicoesManuais: boolean`; `setPeriodo`/`setGeneroBalizamento` salvam as séries atuais na chave atual, apagam a do destino do mapa e restauram (na falta, `balizar()`); clique no chip já ativo virou no-op; `atualizarAtleta` sincroniza cópias nos snapshots; `limparAtletas('festival')`/`importarCompartilhado` limpam snapshots; `partialize` + `merge` custom (default `{} / false` para localStorage antigo); `filtrarAtletas()` exportado de `balizamento.ts`
+- **Upload com edições preserva por nome**: `preservarSeries()` roda em `processarAtletas` (só com `edicoesManuais`) e em `adicionarAtleta` — `remapearPorNome` casa por `nomeChave()` (ids mudam a cada `gerarId()`), `inserirAusentes` insere **só realmente novos** (exclusões manuais não voltam) com regra de encaixe categoria+nível+gênero → gênero → série nova, e reatribui raias; snapshots atualizados com o filtro de cada um; sem flag, upload zera tudo (comportamento antigo); `importarCompartilhado` liga a flag se o link traz séries
+- Testes: **`src/utils/edicaoSeries.test.ts`** (15: chave/nomeChave, moverAtleta com teto/vazia/reordenação/raias únicas, remapearPorNome, inserirAusentes com as 3 regras de encaixe) + **`src/store/useAppStore.test.ts`** (9, docblock jsdom: snapshot por filtro, no-op no chip ativo, gênero independente do período, upload com/sem flag, sync de snapshots, série vazia, flag, limpar) — **111 testes, 0 falhas**; `npx tsc -b --force` 0 erros; `npm run build` OK (CSSs `bg-primary-50/70`, `border-t-primary-300` etc. confirmados no bundle)
+- Docs: CHANGELOG (Added/Fixed/Changed), AGENTS.md (Contexto Crítico + esta sessão)
+
+### Decisões
+- Contraste em Balizamento **e** Controle, **sem** mexer na área de impressão (escolha do usuário)
+- Snapshot por filtro **sem confirmação** e **"Atualizar" continua regenerando** sob demanda sem resetar `edicoesManuais` (escolha do usuário)
+- Upload com edições **preserva por nome**; sem edições **zera** (escolha do usuário)
+- Alternância de cor por **índice no array** (não por `numero`) para duas séries vizinhas nunca ficarem com a mesma cor após lacunas de numeração
+- Teto de 4 **antes** de mover (toast + aborta) em vez de redistribuir para outra série
+- `importarCompartilhado` liga `edicoesManuais` quando traz séries (séries recebidas são potencialmente editadas à mão) — refinamento sobre o plano original (que zerava a flag)
+- Clique no chip de filtro já ativo é no-op (melhoria colateral do snapshot)
+
+### Arquivos
+- src/utils/edicaoSeries.ts (novo)
+- src/utils/edicaoSeries.test.ts (novo)
+- src/store/useAppStore.test.ts (novo)
+- src/store/useAppStore.ts
+- src/utils/balizamento.ts
+- src/components/ui/TabelaGenerica.tsx
+- src/pages/BalizamentoPage.tsx
+- src/pages/ControlePage.tsx
 - CHANGELOG.md
 - AGENTS.md
 

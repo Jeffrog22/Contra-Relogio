@@ -4,15 +4,16 @@ import { Link } from 'react-router-dom';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
-import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { AtletaSerie, GeneroOpcao, PeriodoOpcao } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { formatTempo } from '../utils/medalhas';
+import { moverAtleta } from '../utils/edicaoSeries';
 import { Card, CardHeading } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Pill } from '../components/ui/Pill';
-import { TabelaGenerica, type Coluna } from '../components/ui/TabelaGenerica';
+import { TabelaGenerica, classeLinhaSerie, type Coluna } from '../components/ui/TabelaGenerica';
 import { MedalhaBadge } from '../components/ui/MedalhaBadge';
 
 interface LinhaTabela {
@@ -20,6 +21,8 @@ interface LinhaTabela {
   serie: number;
   raia: 1 | 2 | 3 | 4;
   item: AtletaSerie;
+  indiceSerie: number;
+  primeira: boolean;
 }
 
 const PERIODOS: { valor: PeriodoOpcao; rotulo: string }[] = [
@@ -35,15 +38,14 @@ const GENEROS: { valor: GeneroOpcao; rotulo: string }[] = [
 ];
 
 const CHIP_CLASSE = '!px-3 !py-1 !text-xs';
-const LINHA_CLASSE =
-  'hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800';
 
 interface LinhaSorteavelProps {
   linha: LinhaTabela;
   celulas: ReactNode[];
+  classe: string;
 }
 
-function LinhaSorteavel({ linha, celulas }: LinhaSorteavelProps) {
+function LinhaSorteavel({ linha, celulas, classe }: LinhaSorteavelProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: linha.id,
   });
@@ -52,8 +54,8 @@ function LinhaSorteavel({ linha, celulas }: LinhaSorteavelProps) {
     <tr
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`${LINHA_CLASSE} cursor-grab active:cursor-grabbing${
-        isDragging ? ' opacity-60 bg-primary-50 dark:bg-primary-900/20 relative z-10' : ''
+      className={`${classe} cursor-grab active:cursor-grabbing${
+        isDragging ? ' opacity-60 relative z-10' : ''
       }`}
       {...attributes}
       {...listeners}
@@ -88,12 +90,14 @@ export function BalizamentoPage() {
     }
   }, []);
 
-  const linhas: LinhaTabela[] = series.flatMap((serie) =>
-    serie.atletas.map((item) => ({
+  const linhas: LinhaTabela[] = series.flatMap((serie, indiceSerie) =>
+    serie.atletas.map((item, indice) => ({
       id: `${serie.numero}-${item.atleta.id}`,
       serie: serie.numero,
       raia: item.raia,
       item,
+      indiceSerie,
+      primeira: indice === 0,
     })),
   );
 
@@ -111,37 +115,22 @@ export function BalizamentoPage() {
     const linhaOver = linhas.find((linha) => linha.id === String(over.id));
     if (!linhaAtiva || !linhaOver) return;
 
-    if (linhaAtiva.serie === linhaOver.serie) {
-      const novas = series.map((serie) => {
-        if (serie.numero !== linhaAtiva.serie) return serie;
-        const de = serie.atletas.findIndex((i) => i.atleta.id === linhaAtiva.item.atleta.id);
-        const para = serie.atletas.findIndex((i) => i.atleta.id === linhaOver.item.atleta.id);
-        if (de < 0 || para < 0) return serie;
-        return { ...serie, atletas: arrayMove(serie.atletas, de, para) };
-      });
-      reordenarSeries(novas);
-      return;
+    if (linhaAtiva.serie !== linhaOver.serie) {
+      const destino = series.find((serie) => serie.numero === linhaOver.serie);
+      if (destino && destino.atletas.length >= 4) {
+        mostrarToast('erro', `Série ${linhaOver.serie} já está completa (4 atletas).`);
+        return;
+      }
     }
 
-    const novas = series
-      .map((serie) => {
-        if (serie.numero === linhaAtiva.serie) {
-          return {
-            ...serie,
-            atletas: serie.atletas.filter((i) => i.atleta.id !== linhaAtiva.item.atleta.id),
-          };
-        }
-        if (serie.numero === linhaOver.serie) {
-          const alvo = serie.atletas.findIndex((i) => i.atleta.id === linhaOver.item.atleta.id);
-          const copia = [...serie.atletas];
-          if (alvo >= 0) copia.splice(alvo, 0, linhaAtiva.item);
-          else copia.push(linhaAtiva.item);
-          return { ...serie, atletas: copia };
-        }
-        return serie;
-      })
-      .filter((serie) => serie.atletas.length > 0);
-
+    const novas = moverAtleta(
+      series,
+      linhaAtiva.item.atleta.id,
+      linhaAtiva.serie,
+      linhaOver.serie,
+      linhaOver.item.atleta.id,
+    );
+    if (!novas) return;
     reordenarSeries(novas);
   }
 
@@ -208,9 +197,17 @@ export function BalizamentoPage() {
       colunas={colunas}
       itens={linhas}
       chaveItem={(linha) => linha.id}
+      classeLinha={(linha) => classeLinhaSerie(linha.indiceSerie, linha.primeira)}
       renderLinha={
         modoEdicao
-          ? (linha, celulas) => <LinhaSorteavel key={linha.id} linha={linha} celulas={celulas} />
+          ? (linha, celulas) => (
+              <LinhaSorteavel
+                key={linha.id}
+                linha={linha}
+                celulas={celulas}
+                classe={classeLinhaSerie(linha.indiceSerie, linha.primeira)}
+              />
+            )
           : undefined
       }
       vazio="Nenhuma série gerada."

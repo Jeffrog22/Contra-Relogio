@@ -13,6 +13,26 @@ interface Props<T> {
   vazio?: ReactNode;
   className?: string;
   renderLinha?: (item: T, celulas: ReactNode[]) => ReactNode;
+  classeLinha?: (item: T) => string;
+}
+
+/**
+ * Classe autocontida de linha para tabelas com séries: borda inferior,
+ * tinta alternada por índice (par/ímpar) e recorte superior na primeira
+ * linha de cada série. Não combina com outras classes de borda.
+ */
+export function classeLinhaSerie(indice: number, primeira: boolean): string {
+  const tinta =
+    indice % 2 === 0
+      ? 'bg-primary-50/70 hover:bg-primary-100/70 dark:bg-primary-900/25 dark:hover:bg-primary-900/40'
+      : 'hover:bg-gray-50 dark:hover:bg-gray-800';
+  return [
+    'border-b border-b-gray-100 dark:border-b-gray-800',
+    tinta,
+    primeira ? 'border-t-2 border-t-primary-300 dark:border-t-primary-700' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 export function TabelaGenerica<T>({
@@ -22,6 +42,7 @@ export function TabelaGenerica<T>({
   vazio = 'Nenhum registro encontrado.',
   className = '',
   renderLinha,
+  classeLinha,
 }: Props<T>) {
   return (
     <div
@@ -64,7 +85,11 @@ export function TabelaGenerica<T>({
               return (
                 <tr
                   key={chaveItem(item)}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800"
+                  className={
+                    classeLinha
+                      ? classeLinha(item)
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800'
+                  }
                 >
                   {celulas}
                 </tr>

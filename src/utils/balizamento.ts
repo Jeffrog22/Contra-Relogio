@@ -133,13 +133,22 @@ function raiasDaSerie(tamanho: number, incompleta: boolean): (1 | 2 | 3 | 4)[] {
   return todas.slice(0, tamanho);
 }
 
+export function filtrarAtletas(
+  atletas: Atleta[],
+  periodo: PeriodoOpcao,
+  genero: GeneroOpcao = 'todos',
+): Atleta[] {
+  let filtrados = periodo === 'geral' ? atletas : atletas.filter((a) => a.periodo === periodo);
+  if (genero !== 'todos') filtrados = filtrados.filter((a) => a.genero === genero);
+  return filtrados;
+}
+
 export function balizar(
   atletas: Atleta[],
   periodo: PeriodoOpcao,
   genero: GeneroOpcao = 'todos',
 ): Serie[] {
-  let filtrados = periodo === 'geral' ? atletas : atletas.filter((a) => a.periodo === periodo);
-  if (genero !== 'todos') filtrados = filtrados.filter((a) => a.genero === genero);
+  const filtrados = filtrarAtletas(atletas, periodo, genero);
 
   const resultado: Serie[] = [];
   let numero = 1;

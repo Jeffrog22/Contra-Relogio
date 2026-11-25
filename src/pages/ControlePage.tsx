@@ -6,7 +6,7 @@ import { Card, CardHeading } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { MedalhaBadge } from '../components/ui/MedalhaBadge';
-import { TabelaGenerica } from '../components/ui/TabelaGenerica';
+import { TabelaGenerica, classeLinhaSerie } from '../components/ui/TabelaGenerica';
 import { CronometroSerie } from '../components/ui/CronometroSerie';
 
 function tempoParaMascara(tempo: number | undefined): string {
@@ -42,12 +42,14 @@ export function ControlePage() {
   const series = useAppStore((estado) => estado.series);
   const atletas = useAppStore((estado) => estado.atletas);
 
-  const linhas = series.flatMap((serie) =>
-    serie.atletas.map((item) => ({
+  const linhas = series.flatMap((serie, indiceSerie) =>
+    serie.atletas.map((item, indice) => ({
       key: `${serie.numero}-${item.atleta.id}`,
       serie: serie.numero,
       raia: item.raia,
       atleta: item.atleta,
+      indiceSerie,
+      primeira: indice === 0,
     })),
   );
 
@@ -153,6 +155,7 @@ export function ControlePage() {
               ]}
               itens={linhas}
               chaveItem={(linha) => linha.key}
+              classeLinha={(linha) => classeLinhaSerie(linha.indiceSerie, linha.primeira)}
               vazio="Nenhuma série. Execute o balizamento primeiro."
             />
             </div>
