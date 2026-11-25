@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import { mascaraTempo, parseTempo, formatTempo } from '../utils/medalhas';
@@ -17,6 +17,10 @@ function tempoParaMascara(tempo: number | undefined): string {
 function TempoInput({ atletaId, tempo }: { atletaId: string; tempo?: number }) {
   const atualizarTempo = useAppStore((estado) => estado.atualizarTempoAtleta);
   const [valor, setValor] = useState(() => tempoParaMascara(tempo));
+
+  useEffect(() => {
+    if (parseTempo(valor) !== tempo) setValor(tempoParaMascara(tempo));
+  }, [tempo, valor]);
 
   return (
     <Input

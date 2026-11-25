@@ -56,17 +56,19 @@ function ChipRaia({ atletaId, raia, nome }: ChipProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `chip-${atletaId}`,
   });
+  const nomeCurto = nome.trim().split(/\s+/).slice(0, 2).join(' ');
   return (
     <span
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      title={nome}
       className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full border cursor-grab active:cursor-grabbing transition-opacity ${
         isDragging ? 'opacity-40' : ''
       } bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300`}
     >
       <span className="font-mono tabular-nums font-bold">{raia}</span>
-      <span className="max-w-[10rem] truncate">{nome}</span>
+      <span className="max-w-[10rem] truncate">{nomeCurto}</span>
     </span>
   );
 }
@@ -362,8 +364,7 @@ export function CronometroSerie({ serie, onFechar }: Props) {
             </div>
 
             <div className="mt-1.5 text-center text-[10px] text-gray-400 dark:text-gray-500">
-              Série {serie.numero} — {serie.categoria} · {serie.genero}
-              {serie.nivel ? ` · ${serie.nivel}` : ''}
+              Série {serie.numero} - {serie.genero}
             </div>
           </header>
 

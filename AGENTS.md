@@ -805,3 +805,29 @@ pm run build OK
 ### Typecheck
 - Frontend: 0 erros
 - Backend: 0 erros
+
+---
+
+## Sessão: 25/11/2026 — Cronômetro: descrição da série, chip de 2 nomes e fix do input do Controle
+
+### O que foi feito
+- **Descrição da série** no modal do cronômetro: removidos categoria e nível — agora exibe só `Série {n} - {gênero}` (ex.: `Série 1 - feminino`)
+- **Chip de raia**: exibe apenas o **1º e 2º nome** do aluno (`nome.trim().split(/\s+/).slice(0, 2).join(' ')`) para melhor disposição visual; `title` no chip mantém o nome completo no hover — vale para a linha horizontal e a célula Baliza (mesmo componente `ChipRaia`)
+- **Fix — registro do cronômetro não aparecia no input do Controle**: `TempoInput` (`ControlePage.tsx`) guardava o valor em `useState` inicializado só na montagem; quando `gravar()` atualizava a store, a linha re-renderizava com o novo `tempo` mas o input mantinha o estado local obsoleto. Adicionado `useEffect` que sincroniza quando `parseTempo(valor) !== tempo` (não interfere na digitação, pois digitar também atualiza a store e os valores coincidem)
+- Verificação: `npx tsc -b --force` 0 erros; **81 testes, 0 falhas**; `npm run build` OK
+- Docs: CHANGELOG (Fixed + Added), AGENTS.md (esta sessão)
+
+### Decisões
+- Formato da descrição `Série {n} - {gênero}` conforme pedido do usuário (sem categoria/nível)
+- Corte de nomes por espaço (1º + 2º token), sem exceção para preposições
+- Sincronização do input por comparação `parseTempo(valor) !== tempo` (e não remount/key), para não perder foco nem engolir a máscara enquanto o usuário digita
+
+### Arquivos
+- src/components/ui/CronometroSerie.tsx
+- src/pages/ControlePage.tsx
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
