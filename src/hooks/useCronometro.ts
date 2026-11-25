@@ -2,98 +2,124 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Atleta } from '../types';
 import { useAppStore } from '../store/useAppStore';
 
+export interface TempoPendente {
+  ordem: number;
+  tempoMs: number;
+}
+
 interface UseCronometroReturn {
   running: boolean;
-  selectedId: string | null;
-  done: Set<string>;
-  startedAt: Record<string, number>;
-  masterStartedAt: number | null;
   tempoMestre: number;
+  pendentes: TempoPendente[];
+  atribuicoes: Record<number, string>;
+  chipsDisponiveis: string[];
+  total: number;
+  todasCapturadas: boolean;
+  podeRegistrar: boolean;
   iniciar: () => void;
-  parar: (id: string) => void;
-  reset: () => void;
-  todasConcluidas: () => boolean;
-  tempoDoAtleta: (id: string) => number;
-  temAlguemParaCronometrar: boolean;
+  capturar: () => void;
+  zerar: () => void;
+  atribuir: (ordem: number, atletaId: string) => void;
+  desatribuir: (atletaId: string) => void;
+  gravar: () => void;
 }
 
 export function useCronometro(atletas: Atleta[]): UseCronometroReturn {
   const atualizarTempo = useAppStore((estado) => estado.atualizarTempoAtleta);
   const mostrarToast = useAppStore((estado) => estado.mostrarToast);
   const ids = useMemo(() => atletas.map((a) => a.id), [atletas]);
-  const temAlguemParaCronometrar = useMemo(
-    () => atletas.some((a) => a.tempo === undefined || a.tempo === null),
-    [atletas],
-  );
+  const total = ids.length;
 
   const [running, setRunning] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [done, setDone] = useState<Set<string>>(new Set());
-  const [startedAt, setStartedAt] = useState<Record<string, number>>({});
-  const [tempos, setTempos] = useState<Record<string, number>>({});
   const [tempoMestre, setTempoMestre] = useState(0);
-  const masterStartedAtRef = useRef<number | null>(null);
+  const [pendentes, setPendentes] = useState<TempoPendente[]>([]);
+  const [atribuicoes, setAtribuicoes] = useState<Record<number, string>>({});
+  const masterStartRef = useRef<number | null>(null);
   const tickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const iniciar = useCallback(() => {
-    if (running) return;
-    const agora = Date.now();
-    const novo: Record<string, number> = {};
-    const novoDone = new Set(done);
-    for (const atleta of atletas) {
-      if (atleta.tempo !== undefined && atleta.tempo !== null) {
-        novoDone.add(atleta.id);
-        continue;
-      }
-      if (!novoDone.has(atleta.id)) novo[atleta.id] = agora;
-    }
-    if (Object.keys(novo).length === 0) return;
-    setStartedAt(novo);
-    masterStartedAtRef.current = agora;
-    setTempoMestre(0);
-    setTempos({});
-    setDone(novoDone);
-    setSelectedId(ids.find((id) => !novoDone.has(id)) ?? null);
-    setRunning(true);
-  }, [running, atletas, ids, done]);
+  const todasCapturadas = total > 0 && pendentes.length >= total;
 
-  const parar = useCallback(
-    (id: string) => {
-      if (!running) return;
-      const sa = startedAt[id];
-      if (!sa) return;
-      const agora = Date.now();
-      const tempoSegundos = Number(((agora - sa) / 1000).toFixed(2));
-      atualizarTempo(id, tempoSegundos);
-      const nome = atletas.find((a) => a.id === id)?.nome ?? 'atleta';
-      mostrarToast('sucesso', `Tempo de ${nome} registrado.`);
-      const novoDone = new Set(done);
-      novoDone.add(id);
-      setDone(novoDone);
-      setTempos((anteriores) => ({ ...anteriores, [id]: agora - sa }));
-      setSelectedId(ids.find((i) => !novoDone.has(i)) ?? null);
-      if (ids.every((i) => novoDone.has(i))) setRunning(false);
+  const podeRegistrar =
+    pendentes.length > 0 && pendentes.every((p) => atribuicoes[p.ordem] !== undefined);
+
+  const chipsDisponiveis = useMemo(() => {
+    const usados = new Set(Object.values(atribuicoes));
+    return ids.filter((id) => !usados.has(id));
+  }, [ids, atribuicoes]);
+
+  /** Regra do último chip: com exatamente 1 chip livre e 1 pendente sem chip, atribui automaticamente. */
+  const aplicarAuto = useCallback(
+    (novosPendentes: TempoPendente[], novasAtribuicoes: Record<number, string>) => {
+      const usados = new Set(Object.values(novasAtribuicoes));
+      const livres = ids.filter((id) => !usados.has(id));
+      if (livres.length !== 1) return novasAtribuicoes;
+      const semChip = novosPendentes.find((p) => novasAtribuicoes[p.ordem] === undefined);
+      if (!semChip) return novasAtribuicoes;
+      return { ...novasAtribuicoes, [semChip.ordem]: livres[0] };
     },
-    [running, startedAt, atletas, ids, done, atualizarTempo, mostrarToast],
+    [ids],
   );
 
-  const reset = useCallback(() => {
+  const iniciar = useCallback(() => {
+    if (running || total === 0 || todasCapturadas) return;
+    masterStartRef.current = Date.now();
+    setTempoMestre(0);
+    setRunning(true);
+  }, [running, total, todasCapturadas]);
+
+  const capturar = useCallback(() => {
+    if (!running || masterStartRef.current === null) return;
+    if (pendentes.length >= total) return;
+    const tempoMs = Date.now() - masterStartRef.current;
+    const novos: TempoPendente[] = [...pendentes, { ordem: pendentes.length + 1, tempoMs }];
+    setPendentes(novos);
+    if (novos.length >= total) {
+      setRunning(false);
+      mostrarToast('sucesso', 'Todas as chegadas capturadas!');
+    }
+    setAtribuicoes((prev) => aplicarAuto(novos, prev));
+  }, [running, pendentes, total, aplicarAuto, mostrarToast]);
+
+  const zerar = useCallback(() => {
     if (tickerRef.current) {
       clearInterval(tickerRef.current);
       tickerRef.current = null;
     }
+    masterStartRef.current = null;
     setRunning(false);
-    setStartedAt({});
-    setTempos({});
     setTempoMestre(0);
-    setSelectedId(null);
-    setDone(new Set());
-    masterStartedAtRef.current = null;
+    setPendentes([]);
+    setAtribuicoes({});
   }, []);
 
-  const todasConcluidas = useCallback((): boolean => {
-    return ids.length > 0 && ids.every((id) => done.has(id));
-  }, [ids, done]);
+  const atribuir = useCallback(
+    (ordem: number, atletaId: string) => {
+      setAtribuicoes((prev) => {
+        const semEste = Object.fromEntries(
+          Object.entries(prev).filter(([, id]) => id !== atletaId),
+        );
+        return aplicarAuto(pendentes, { ...semEste, [ordem]: atletaId });
+      });
+    },
+    [pendentes, aplicarAuto],
+  );
+
+  const desatribuir = useCallback((atletaId: string) => {
+    setAtribuicoes((prev) =>
+      Object.fromEntries(Object.entries(prev).filter(([, id]) => id !== atletaId)),
+    );
+  }, []);
+
+  const gravar = useCallback(() => {
+    let n = 0;
+    for (const p of pendentes) {
+      const atletaId = atribuicoes[p.ordem];
+      if (!atletaId) continue;
+      atualizarTempo(atletaId, Number((p.tempoMs / 1000).toFixed(2)));
+      n++;
+    }
+    mostrarToast('sucesso', `${n} tempo(s) registrado(s) no Controle.`);
+  }, [pendentes, atribuicoes, atualizarTempo, mostrarToast]);
 
   useEffect(() => {
     if (!running) {
@@ -104,18 +130,8 @@ export function useCronometro(atletas: Atleta[]): UseCronometroReturn {
       return;
     }
     const tick = () => {
-      const t = Date.now();
-      const base = masterStartedAtRef.current ?? t;
-      setTempoMestre(t - base);
-      setTempos((anteriores) => {
-        const n: Record<string, number> = { ...anteriores };
-        for (const id of ids) {
-          if (done.has(id)) continue;
-          const sa = startedAt[id];
-          if (sa) n[id] = t - sa;
-        }
-        return n;
-      });
+      const inicio = masterStartRef.current;
+      if (inicio !== null) setTempoMestre(Date.now() - inicio);
     };
     tick();
     tickerRef.current = setInterval(tick, 30);
@@ -125,24 +141,22 @@ export function useCronometro(atletas: Atleta[]): UseCronometroReturn {
         tickerRef.current = null;
       }
     };
-  }, [running, ids, done, startedAt]);
-
-  const tempoDoAtleta = useCallback((id: string): number => {
-    return tempos[id] ?? 0;
-  }, [tempos]);
+  }, [running]);
 
   return {
     running,
-    selectedId,
-    done,
-    startedAt,
-    masterStartedAt: masterStartedAtRef.current,
     tempoMestre,
+    pendentes,
+    atribuicoes,
+    chipsDisponiveis,
+    total,
+    todasCapturadas,
+    podeRegistrar,
     iniciar,
-    parar,
-    reset,
-    todasConcluidas,
-    tempoDoAtleta,
-    temAlguemParaCronometrar,
+    capturar,
+    zerar,
+    atribuir,
+    desatribuir,
+    gravar,
   };
 }

@@ -90,7 +90,7 @@ Regras:
 - **Typo perigoso já acontecido**: `obrigigatoria` vs `obrigatoria` em interpolação de template string causou `ReferenceError` silencioso só no runtime dos testes — revisar identificadores com acento/typos ao revisar diffs.
 - **Repo usa o kit de documentação**: hook `.githooks/post-commit` cria tags SemVer; sessões registradas via `scripts/nova-sessao.ps1`; nunca criar SESSION.md.
 - **Adição manual de atleta**: `adicionarAtleta(dados)` no store retorna `boolean` (`false` = categoria inválida ou nome duplicado case-insensitive — toast emitido pelo próprio store); monta o `Atleta` completo (`gerarId`, `categoriaPorIdade`, `calcularMedalha`) e re-executa `balizar()` **só se já existirem séries** (mesmo descarte de ajustes manuais dos filtros). `Modal` (DS) teve o primeiro uso real aqui.
-- **Cronômetro da Controle**: estado é **local do hook** `useCronometro` (não na store) — a store só recebe o resultado via `atualizarTempoAtleta(id, segundos)`; `CronometroSerie` é um `Modal` do DS controlado pela `ControlePage` (prop `onFechar`); a série exibida é **derivada pelo número** (`series.find(s => s.numero === n)`) para nunca ficar obsoleta após gravar tempo; fechar com timer ativo usa `window.confirm` e descarta; auto-conclusão via `useEffect` + guard `useRef` (nunca chamar callback durante render); atleta com tempo pré-existente é marcado `done` no `iniciar()` e não recebe botão.
+- **Cronômetro da Controle (reescrito)**: estado **local do hook** `useCronometro` (não na store) — `pendentes` (chegadas em sequência ordinal) + `atribuicoes` (ordem→atletaId); **clique curto no Parar** captura o tempo atual (1 clique = 1 chegada, até a série toda → para sozinho + toast "Todas as chegadas capturadas!"); **segurar Parar 3s zera** tempo e pendentes (botões com `user-select:none`, contextmenu bloqueado e `touch-callout:none`); **auto-atribuição do último chip**: com exatamente 1 chip livre e 1 pendente sem chip, atribui sozinho (2+ chips espera o arraste; devolver chip à zona `chips-livre` desatribui); **Registrar** grava via `atualizarTempoAtleta(id, Number((ms/1000).toFixed(2)))` e fecha o modal. Modal **não arrasta** (fixo centralizado rente ao topo); quem arrasta são os **botões Iniciar/Parar** (pointer events + limiar 6px, posição em `localStorage` `festival-crono-btns`); chips de raia usam `@dnd-kit` (droppable = célula Baliza `pend-{ordem}` e zona `chips-livre`).
 
 ---
 
@@ -769,6 +769,36 @@ pm run build OK
 - vite.config.ts
 - src/test-setup.ts (deletado)
 - package.json (+@testing-library/react, +jsdom — instalados na sessão anterior)
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 25/11/2026 — Cronômetro redesenhado (crono.html + identidade visual)
+
+### O que foi feito
+- **`useCronometro.ts` reescrito**: novo modelo — `pendentes` (chegadas em sequência ordinal: `{ordem, tempoMs}`) + `atribuicoes` (ordem → atletaId); API nova: `iniciar`, `capturar` (clique curto no Parar), `zerar` (hold 3s), `atribuir`, `desatribuir`, `gravar`; derived: `chipsDisponiveis`, `todasCapturadas`, `podeRegistrar`; auto-atribuição do último chip (`aplicarAuto`: exatamente 1 chip livre + 1 pendente sem chip → atribui); `capturar` para o cronômetro sozinho ao completar a série + toast; `gravar` escreve `atualizarTempoAtleta(id, Number((ms/1000).toFixed(2)))` por pendente atribuído
+- **`CronometroSerie.tsx` reescrito** (referência visual: `crono.html` na raiz, cores do DS): modal **fixo centralizado rente à borda superior** (`items-start`, sem drag do modal); **botões ▶ Iniciar (canto sup. esq.) e ■ Parar (canto sup. dir.) arrastáveis livremente** dentro do modal (pointer events + limiar 6px; posição salva em `localStorage` `festival-crono-btns`); clique curto no Parar = `capturar()`, **segurar 3s = `zerar()`** (botões com `touch-none`, `select-none` no modal, `onContextMenu` bloqueado e `WebkitTouchCallout: none`); display mestre `00'00"00` em caixa escura (`bg-gray-900 dark:bg-gray-950`) com dígitos `text-primary-400` e badge Rodando/Parado; **linha horizontal de chips `raia-nome`** abaixo do cronômetro (chip do DS `bg-blue-100 … rounded-full`), **draggable via @dnd-kit**; tabela **Registros pendentes** (Ordem | Tempo | Baliza) com célula Baliza como **droppable** (`pend-{ordem}`) e zona `chips-livre` para devolver chip (desatribui); rodapé **Registrar** (habilitado só com todos atribuídos → grava e fecha) e **Fechar** (confirm se há pendentes)
+- **`useCronometro.test.ts` reescrito**: 11 testes (iniciar, tick, capturar ordinal, parada automática + toast, capturar sem iniciar, atribuição manual + auto do último chip, 3+ chips espera arraste, zerar, gravar com 2 casas, podeRegistrar, formatTempo)
+- Verificação: `npx tsc -b --force` 0 erros; **81 testes, 0 falhas**; `npm run build` OK
+- Docs: CHANGELOG (Added), AGENTS.md (Contexto Crítico + esta sessão)
+
+### Decisões
+- Modal não arrasta (escolha do usuário): só os botões Iniciar/Parar são posicionáveis manualmente
+- Hold 3s no Parar zera tempo + pendentes (não toca nos tempos já gravados no Controle)
+- Auto-atribuição **só do último chip** (1 chip livre → automático; 2+ → espera arraste manual)
+- 1 clique no Parar = 1 tempo até a série toda (sem voltas extras); depois disso o cronômetro para sozinho
+- Registrar grava e fecha o modal; chip atribuído some da linha horizontal (pode ser devolvido à zona de chips)
+- `crono.html` fica na raiz como referência de layout (não editado)
+
+### Arquivos
+- src/hooks/useCronometro.ts (reescrito)
+- src/hooks/useCronometro.test.ts (reescrito)
+- src/components/ui/CronometroSerie.tsx (reescrito)
 - CHANGELOG.md
 - AGENTS.md
 

@@ -1,0 +1,453 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cronômetro - Registros</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    min-height: 100%;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #fff;
+    color: #111;
+}
+
+body {
+    min-height: 620px;
+}
+
+/* CABEÇALHO */
+
+.header {
+    height: 147px;
+    width: 100%;
+    background: #10182d;
+    position: relative;
+    color: white;
+}
+
+.handle {
+    position: absolute;
+    width: 39px;
+    height: 5px;
+    border-radius: 5px;
+    background: #657080;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+button {
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.btn-start {
+    position: absolute;
+    left: 22px;
+    top: 22px;
+    width: 135px;
+    height: 42px;
+    border: 2px solid white;
+    outline: 1px solid #52617b;
+    outline-offset: 2px;
+    border-radius: 25px;
+    background: #2862e6;
+    color: white;
+    font-size: 20px;
+}
+
+.btn-stop {
+    position: absolute;
+    right: 65px;
+    top: 29px;
+    width: 142px;
+    height: 42px;
+    border: none;
+    border-radius: 25px;
+    background: #dc2429;
+    color: white;
+    font-size: 20px;
+}
+
+.timer {
+    position: absolute;
+    left: 50%;
+    top: 20px;
+    transform: translateX(-50%);
+    width: 198px;
+    height: 78px;
+    border-radius: 13px;
+    background: #090f20;
+    text-align: center;
+}
+
+.clock-icon {
+    position: absolute;
+    left: 16px;
+    top: 11px;
+    width: 16px;
+    height: 16px;
+    background: #00e5c0;
+    color: #10182d;
+    font-size: 12px;
+    line-height: 16px;
+    border-radius: 50%;
+}
+
+.status {
+    position: absolute;
+    top: 14px;
+    right: 19px;
+    color: #00e5c0;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status span {
+    background: #174b3d;
+    color: #6ce6a1;
+    border-radius: 8px;
+    padding: 2px 5px;
+    font-size: 9px;
+    margin-left: 4px;
+}
+
+.time {
+    position: absolute;
+    top: 31px;
+    left: 0;
+    width: 100%;
+    color: #00eac4;
+    font-family: monospace;
+    font-size: 27px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.time small {
+    font-size: 17px;
+}
+
+.swimmers {
+    position: absolute;
+    top: 108px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+}
+
+.swimmer {
+    background: #f6e9d7;
+    color: #222;
+    border-radius: 15px;
+    padding: 3px 9px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.series {
+    position: absolute;
+    bottom: 7px;
+    left: 14px;
+    font-size: 11px;
+}
+
+/* ÁREA DE REGISTROS */
+
+.content {
+    position: relative;
+    padding: 14px 12px 55px;
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: bold;
+    margin: 0 0 8px;
+}
+
+.badges {
+    position: absolute;
+    top: 8px;
+    right: 9px;
+    display: flex;
+    gap: 7px;
+}
+
+.badge {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8e9dd;
+    font-size: 10px;
+}
+
+.badge:last-child {
+    background: #f9f0d8;
+}
+
+table {
+    width: 508px;
+    max-width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 12px;
+}
+
+thead {
+    height: 25px;
+}
+
+th {
+    text-align: left;
+    font-weight: bold;
+    border-bottom: 1px solid #dedede;
+    padding: 0 12px 5px;
+}
+
+td {
+    height: 38px;
+    border-bottom: 1px solid #dedede;
+    padding: 0 12px;
+}
+
+th:nth-child(1),
+td:nth-child(1) {
+    width: 33%;
+}
+
+th:nth-child(2),
+td:nth-child(2) {
+    width: 36%;
+}
+
+th:nth-child(3),
+td:nth-child(3) {
+    width: 31%;
+}
+
+.baliza {
+    width: 34px;
+    height: 28px;
+    border: none;
+    border-radius: 20px;
+    background: #eef3fb;
+    color: #8a95a5;
+    font-size: 15px;
+}
+
+/* RODAPÉ */
+
+.footer {
+    position: fixed;
+    bottom: 0;
+    right: 10px;
+    display: flex;
+    gap: 10px;
+    padding-bottom: 5px;
+    background: white;
+}
+
+.btn-register {
+    background: #2862dc;
+    color: white;
+    border: none;
+    border-radius: 18px;
+    height: 28px;
+    padding: 0 16px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.btn-close {
+    background: white;
+    color: #333;
+    border: 1px solid #d5d5d5;
+    border-radius: 18px;
+    height: 28px;
+    padding: 0 16px;
+    font-size: 12px;
+}
+
+@media (max-width: 500px) {
+    .btn-start {
+        left: 12px;
+        width: 105px;
+        font-size: 16px;
+    }
+
+    .btn-stop {
+        right: 12px;
+        width: 100px;
+        font-size: 16px;
+    }
+
+    .timer {
+        width: 155px;
+    }
+
+    .time {
+        font-size: 22px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="handle"></div>
+
+    <button class="btn-start" onclick="startTimer()">
+        ▶ Iniciar
+    </button>
+
+    <div class="timer">
+        <div class="clock-icon">◷</div>
+
+        <div class="status">
+            Estado <span id="status">Rodando</span>
+        </div>
+
+        <div class="time" id="display">
+            00'<small>27</small>"<small>45</small>
+        </div>
+    </div>
+
+    <button class="btn-stop" onclick="stopTimer()">
+        ■ Parar
+    </button>
+
+    <div class="swimmers">
+        <span class="swimmer">3-Elisa</span>
+        <span class="swimmer">4-Manuela</span>
+    </div>
+
+    <div class="series">Série 1 - feminino</div>
+
+</header>
+
+<main class="content">
+
+    <h3 class="section-title">Registros pendentes</h3>
+
+    <div class="badges">
+        <span class="badge">3</span>
+        <span class="badge">4</span>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Ordem</th>
+                <th>Tempo</th>
+                <th>Baliza</th>
+            </tr>
+        </thead>
+
+        <tbody id="records">
+            <tr>
+                <td>1</td>
+                <td>00'14"76</td>
+                <td><button class="baliza">—</button></td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>00'17"16</td>
+                <td><button class="baliza">—</button></td>
+            </tr>
+        </tbody>
+    </table>
+
+</main>
+
+<footer class="footer">
+    <button class="btn-register" onclick="registerTime()">
+        Registrar
+    </button>
+
+    <button class="btn-close" onclick="stopTimer()">
+        Fechar
+    </button>
+</footer>
+
+<script>
+let elapsed = 2745;
+let running = true;
+let interval = null;
+
+function renderTime() {
+    const minutes = Math.floor(elapsed / 6000);
+    const seconds = Math.floor((elapsed % 6000) / 100);
+    const centiseconds = elapsed % 100;
+
+    document.getElementById('display').innerHTML =
+        String(minutes).padStart(2,'0') +
+        "'<small>" +
+        String(seconds).padStart(2,'0') +
+        '</small>"<small>' +
+        String(centiseconds).padStart(2,'0') +
+        '</small>';
+}
+
+function startTimer() {
+    if (running) return;
+
+    running = true;
+    document.getElementById('status').textContent = 'Rodando';
+
+    interval = setInterval(() => {
+        elapsed++;
+        renderTime();
+    }, 10);
+}
+
+function stopTimer() {
+    running = false;
+    clearInterval(interval);
+    document.getElementById('status').textContent = 'Parado';
+}
+
+function registerTime() {
+    stopTimer();
+
+    const minutes = Math.floor(elapsed / 6000);
+    const seconds = Math.floor((elapsed % 6000) / 100);
+    const centiseconds = elapsed % 100;
+
+    const formatted =
+        String(minutes).padStart(2,'0') + "'" +
+        String(seconds).padStart(2,'0') + '"' +
+        String(centiseconds).padStart(2,'0');
+
+    const tbody = document.getElementById('records');
+    const row = tbody.insertRow();
+
+    row.innerHTML = `
+        <td>${tbody.rows.length}</td>
+        <td>${formatted}</td>
+        <td><button class="baliza">—</button></td>
+    `;
+}
+
+interval = setInterval(() => {
+    elapsed++;
+    renderTime();
+}, 10);
+</script>
+
+</body>
+</html>
