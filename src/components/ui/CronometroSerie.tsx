@@ -12,6 +12,7 @@ import {
 import type { Serie } from '../../types';
 import { useCronometro } from '../../hooks/useCronometro';
 import { formatTempo } from '../../utils/medalhas';
+import { nomeCurto } from '../../utils/nomes';
 import { Button } from './Button';
 
 interface Props {
@@ -56,7 +57,7 @@ function ChipRaia({ atletaId, raia, nome }: ChipProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `chip-${atletaId}`,
   });
-  const nomeCurto = nome.trim().split(/\s+/).slice(0, 2).join(' ');
+  const nomeCurtoAluno = nomeCurto(nome);
   return (
     <span
       ref={setNodeRef}
@@ -68,7 +69,7 @@ function ChipRaia({ atletaId, raia, nome }: ChipProps) {
       } bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300`}
     >
       <span className="font-mono tabular-nums font-bold">{raia}</span>
-      <span className="max-w-[10rem] truncate">{nomeCurto}</span>
+      <span className="max-w-[10rem] truncate">{nomeCurtoAluno}</span>
     </span>
   );
 }

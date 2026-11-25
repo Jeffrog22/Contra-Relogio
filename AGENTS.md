@@ -831,3 +831,30 @@ pm run build OK
 ### Typecheck
 - Frontend: 0 erros
 - Backend: 0 erros
+
+---
+
+## Sessão: 25/11/2026 — Chip de raia desconsidera preposições na contagem
+
+### O que foi feito
+- **`src/utils/nomes.ts`** (novo): função pura `nomeCurto(nome)` — separa por espaços, remove preposições/contrações (`de, do, da, dos, das, no, na, nos, nas, em, com, por, para, a, o`, caixa-insensível) **do texto e da contagem**, pega os 2 primeiros restantes; fallback: se a filtragem zerar os tokens, usa os 2 primeiros originais
+- **`CronometroSerie.tsx`**: `ChipRaia` passa a usar `nomeCurto(nome)` (linha horizontal e célula Baliza); `title` segue exibindo o nome completo no hover
+- **`src/utils/nomes.test.ts`** (novo): 6 testes (sem preposição, com preposição/contração, caixa mista, preposição entre os 2 nomes, nome único/espaços, fallback)
+- Verificação: `npx tsc -b --force` 0 erros; **87 testes, 0 falhas**; `npm run build` OK
+- Docs: CHANGELOG (Changed), AGENTS.md (esta sessão)
+
+### Decisões
+- Preposição é removida do texto também (escolha do usuário — chip mais curto)
+- Lista de preposições + contrações comuns do português (escolha do usuário)
+- Filtro em módulo utilitário puro (testável em node, sem render de componente)
+
+### Arquivos
+- src/utils/nomes.ts (novo)
+- src/utils/nomes.test.ts (novo)
+- src/components/ui/CronometroSerie.tsx
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros

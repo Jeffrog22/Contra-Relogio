@@ -6,6 +6,9 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
+### Changed
+- **Chip de raia do cronômetro**: `nomeCurto()` (`src/utils/nomes.ts`) — 1º e 2º nome do aluno **desconsiderando preposições/contrações** (`de, do, da, dos, das, no, na, nos, nas, em, com, por, para, a, o`) no texto e na contagem (ex.: `Maria de Paula Silva` → `Maria Paula`); `title` mantém o nome completo no hover
+
 ### Fixed
 - **Controle**: campo de tempo não refletia o valor gravado pelo cronômetro da série — `TempoInput` mantinha estado local inicializado só na montagem; agora sincroniza com a prop `tempo` quando o valor da store diverge do digitado (`parseTempo(valor) !== tempo`), sem interferir na digitação
 
