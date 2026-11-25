@@ -93,7 +93,7 @@ Regras:
 - **Cronômetro da Controle (reescrito)**: estado **local do hook** `useCronometro` (não na store) — `pendentes` (chegadas em sequência ordinal) + `atribuicoes` (ordem→atletaId); **clique curto no Parar** captura o tempo atual (1 clique = 1 chegada, até a série toda → para sozinho + toast "Todas as chegadas capturadas!"); **segurar Parar 3s zera** tempo e pendentes (botões com `user-select:none`, contextmenu bloqueado e `touch-callout:none`); **auto-atribuição do último chip**: com exatamente 1 chip livre e 1 pendente sem chip, atribui sozinho (2+ chips espera o arraste; devolver chip à zona `chips-livre` desatribui); **Registrar** grava via `atualizarTempoAtleta(id, Number((ms/1000).toFixed(2)))` e fecha o modal. Modal **não arrasta** (fixo centralizado rente ao topo); quem arrasta são os **botões Iniciar/Parar** (pointer events + limiar 6px, posição em `localStorage` `festival-crono-btns`); chips de raia usam `@dnd-kit` (droppable = célula Baliza `pend-{ordem}` e zona `chips-livre`).
 - **Snapshot por filtro + flag de edição**: store tem `seriesPorFiltro: Record<string, Serie[]>` (chave `chaveFiltro(periodo, genero)` = `` `${periodo}|${genero}` ``) e `edicoesManuais: boolean` (ambos no `partialize` de `festival-storage`, com `merge` custom que default `{} / false` para localStorage antigo). `setPeriodo`/`setGeneroBalizamento` **salvam as séries atuais na chave atual e restauram a do destino** (na falta, `balizar()`); o snapshot do destino é apagado ao restaurar (invariante: a chave atual nunca fica no mapa) e clicar no chip já ativo é **no-op**. `edicoesManuais` sobe em `removerAtletaDaSerie`/`reordenarSeries` e só desce em `limparAtletas('festival')`, `processarAtletas` sem edições e `importarCompartilhado` (que liga `true` se o link traz séries); `executarBalizamento` (Atualizar) regenera sob demanda e **não** mexe na flag. `atualizarAtleta` sincroniza as cópias também nos snapshots.
 - **Upload com edições preserva por nome**: `preservarSeries()` (helper da store) roda em `processarAtletas` (só com `edicoesManuais`) e em `adicionarAtleta` — `remapearPorNome` casa por `nomeChave()` = `nome.trim().toLowerCase()` (**os ids mudam a cada `gerarId()`**, por isso é por nome) e `inserirAusentes` insere **apenas quem é realmente novo** (nome ausente da base anterior — exclusões manuais **não voltam**); regra de encaixe: mesma `categoriaOficial+nivel+genero` com <4 → mesma série; senão mesmo `genero` com <4 → anexa; senão cria série (`numero = max+1`); snapshots por filtro atualizados com o filtro de cada um. Helpers puros em `src/utils/edicaoSeries.ts`.
-- **Drag com teto de 4**: `moverAtleta(series, atletaId, de, para, alvoId?)` em `edicaoSeries.ts` retorna `null` quando a série destino tem **4 atletas** (a página mostra toast `Série N já está completa (4 atletas).` e aborta) e filtra séries que ficam vazias — série com 5+ faria `reatribuirRaias` repetir raia 1 (`raias[i] ?? 1`). `removerAtletaDaSerie` também filtra vazias. Raias de série ≤4 são sempre únicas (`raiasDaSerie`: 4→[1,2,3,4], 3→[2,3,4], 2→[1,2], 1→[1]).
+- **Drag com teto de 4 → troca**: `moverAtleta(series, atletaId, de, para, alvoId?)` em `edicaoSeries.ts` — série destino **<4** → move normalmente (filtra séries vazias); série destino **=4 com `alvoId`** → **troca** os dois (cada um assume a posição do outro, tamanhos preservados — as duas seguem cheias se ambas tinham 4); destino =4 **sem `alvoId`** → `null` (sem alvo não há com quem trocar). A página não bloqueia mais o drag: em troca mostra toast `X trocado com Y (série N).` Série com 5+ faria `reatribuirRaias` repetir raia 1 (`raias[i] ?? 1`). `removerAtletaDaSerie` filtra vazias. Raias de série ≤4 são sempre únicas (`raiasDaSerie`: 4→[1,2,3,4], 3→[2,3,4], 2→[1,2], 1→[1]).
 - **Contraste de séries na UI**: `classeLinhaSerie(indice, primeira)` exportada de `TabelaGenerica` — tinta alternada por **índice no array** (não por `numero`, por causa das lacunas de numeração), `border-b` fino + `border-t-2 border-t-primary-300` na **primeira linha de cada série**; a prop `classeLinha(item)` do `TabelaGenerica` substitui as classes padrão da `<tr>` (autocontida, sem conflito). `BalizamentoPage`/`ControlePage` adicionam `indiceSerie`/`primeira` às linhas e `LinhaSorteavel` recebe a mesma classe; **área de impressão intocada**.
 - **Numeração contígua + saneamento de dados legados**: invariante — `series` e `seriesPorFiltro` ficam sempre numeradas **1..n**. `renumerarSeries(series)` (em `edicaoSeries.ts`) fecha lacunas nas mutações que podem esvaziar série (`reordenarSeries`, `removerAtletaDaSerie`, `preservarSeries`; retorna o **mesmo array** se já contíguo). `sanearSeries(series)` (série >4 → corta para os 4 primeiros + `reatribuirRaias` + renumera; dado válido → mesma referência) roda no **`merge` do persist** (séries e snapshots) e no **`importarCompartilhado`** — é o que **repara sozinho séries corrompidas criadas antes do teto de 4** (sintoma: balizas duplicadas *dentro da mesma série* vindas do `localStorage`; o excedente permanece na base e volta em "Atualizar"). As utils puras (`moverAtleta`, `remapearPorNome`, `inserirAusentes`) **não** renumeram — a invariante é da store.
 - **Export `.xlsx` + auto-sync do histórico**: `exportXlsx(nome, campos, linhas)` em `src/utils/xlsx.ts` (SheetJS `xlsx`, **import dinâmico** — chunk separado no build, só carrega no clique) espelha a assinatura de `exportCSV`; usada só na Balizamento (`balizamento.xlsx`) e Controle (`controle-resultados.xlsx`). **`atualizarTempoAtleta` faz upsert em `historico`** com `ano = new Date().getFullYear()` (hoje 2026) casando por `nomeChave()` (trim+lowercase) — mesmo aluno+ano **substitui**, senão append; **`tempo === undefined` não mexe** no histórico (não apaga linha vinda de CSV — o input limpa durante a digitação); escopo é só a base **Festival** (edição de tempo na Lista via `atualizarAtleta` **não** sincroniza). Na Análise, `anos` = anos do histórico **∪ ano atual** (chip e coluna 2026 sempre existem, células vazias com "—") e o label "edição(ões)" usa `anosComDados` (só anos com registros).
@@ -956,6 +956,33 @@ pm run build OK
 - src/store/useAppStore.ts
 - src/pages/AnalisePage.tsx
 - src/store/useAppStore.test.ts
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+
+---
+
+## Sessão: 25/11/2026 — Troca de atleta entre séries completas (drag)
+
+### O que foi feito
+- **`src/utils/edicaoSeries.ts`** — `moverAtleta()`: série destino **=4 com `alvoId`** agora faz **troca** em vez de `return null` — o atleta movido assume a posição/raia do alvo e o alvo assume a posição do movido na série de origem (tamanhos preservados, ambas seguem cheias); destino =4 **sem `alvoId`** continua `null`; destino <4 segue movendo normalmente (filtra séries vazias)
+- **`src/pages/BalizamentoPage.tsx`** — removido o bloqueio prévio do `aoTerminarDrag` (toast de erro "Série N já está completa"); agora chama `moverAtleta` direto e, quando a operação foi troca, emite toast de sucesso `X trocado com Y (série N).`
+- Testes: `edicaoSeries.test.ts` — teste antigo de recusa virou recusa **sem alvo** + 2 novos (troca 3↔4 com posições verificadas, troca 4↔4 mantendo completas e raias únicas) — **128 testes, 0 falhas**; `npx tsc -b --force` 0 erros; `npm run build` OK
+- Docs: CHANGELOG (Changed + Fixed ajustado), AGENTS.md (Contexto Crítico + esta sessão)
+
+### Decisões
+- **Troca com o atleta sob o cursor** (drag direto, sem modal) — escolha do usuário
+- Série destino cheia **sem** alvo definido mantém `null` (defensivo; o `closestCenter` do dnd-kit sempre aponta uma linha, então na prática sempre há alvo)
+- Tamanhos preservados na troca (origem 3 + destino 4 continua 3+4) — o teto de 4 jamais é violado
+
+### Arquivos
+- src/utils/edicaoSeries.ts
+- src/pages/BalizamentoPage.tsx
+- src/utils/edicaoSeries.test.ts
 - CHANGELOG.md
 - AGENTS.md
 

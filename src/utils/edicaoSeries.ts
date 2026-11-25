@@ -26,8 +26,9 @@ function moverItem<T>(lista: T[], de: number, para: number): T[] {
 
 /**
  * Move um atleta entre séries (ou reordena dentro da mesma).
- * Retorna `null` quando a operação é inválida — inclusive quando a série de
- * destino já tem 4 atletas (evita raias duplicadas na reatribuição).
+ * Quando a série de destino já tem 4 atletas e há `alvoId`, **troca** os dois
+ * (cada um assume a posição do outro — ambos as séries seguem com 4).
+ * Retorna `null` quando a operação é inválida.
  * A reatribuição de raias é responsabilidade do chamador (`reordenarSeries`).
  */
 export function moverAtleta(
@@ -56,13 +57,26 @@ export function moverAtleta(
     );
   }
 
-  if (destino.atletas.length >= 4) return null;
-
   const movido = origem.atletas[idxOrigem];
-  const restantes = origem.atletas.filter((_, indice) => indice !== idxOrigem);
   const idxAlvo = alvoId
     ? destino.atletas.findIndex((item) => item.atleta.id === alvoId)
     : -1;
+
+  if (destino.atletas.length >= 4) {
+    if (idxAlvo < 0) return null;
+    const trocado = destino.atletas[idxAlvo];
+    const novosOrigem = [...origem.atletas];
+    novosOrigem[idxOrigem] = trocado;
+    const novosDestino = [...destino.atletas];
+    novosDestino[idxAlvo] = movido;
+    return series.map((serie) => {
+      if (serie.numero === de) return { ...serie, atletas: novosOrigem };
+      if (serie.numero === para) return { ...serie, atletas: novosDestino };
+      return serie;
+    });
+  }
+
+  const restantes = origem.atletas.filter((_, indice) => indice !== idxOrigem);
   const inseridos = [...destino.atletas];
   if (idxAlvo >= 0) inseridos.splice(idxAlvo, 0, movido);
   else inseridos.push(movido);

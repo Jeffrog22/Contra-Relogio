@@ -92,12 +92,62 @@ describe('moverAtleta', () => {
     expect(resultado?.[1].atletas.map((item) => item.atleta.id)).toEqual([c.id, a.id, d.id]);
   });
 
-  it('recusa mover para série que já tem 4 atletas (raias nunca duplicam)', () => {
+  it('troca com o atleta alvo quando a série destino já tem 4', () => {
+    const origem = [atleta(), atleta(), atleta()];
+    const destino = [atleta(), atleta(), atleta(), atleta()];
+    const series = [serie(1, origem), serie(2, destino)];
+
+    const resultado = moverAtleta(series, origem[0].id, 1, 2, destino[2].id);
+
+    expect(resultado).not.toBeNull();
+    // tamanhos preservados (origem 3, destino 4)
+    expect(resultado?.[0].atletas).toHaveLength(3);
+    expect(resultado?.[1].atletas).toHaveLength(4);
+    // origem[0] ocupa a posição de destino[2] e vice-versa
+    expect(resultado?.[0].atletas[0].atleta.id).toBe(destino[2].id);
+    expect(resultado?.[1].atletas[2].atleta.id).toBe(origem[0].id);
+    // demais posições intactas (origem segue com 3)
+    expect(resultado?.[0].atletas.slice(1).map((item) => item.atleta.id)).toEqual([
+      origem[1].id,
+      origem[2].id,
+    ]);
+    expect(resultado?.[1].atletas.map((item) => item.atleta.id)).toEqual([
+      destino[0].id,
+      destino[1].id,
+      origem[0].id,
+      destino[3].id,
+    ]);
+    expect(resultado?.every((s) => raiasUnicas(reatribuirRaias(s)))).toBe(true);
+  });
+
+  it('troca 4↔4 mantendo ambas as séries completas', () => {
+    const origem = [atleta(), atleta(), atleta(), atleta()];
+    const destino = [atleta(), atleta(), atleta(), atleta()];
+    const series = [serie(1, origem), serie(2, destino)];
+
+    const resultado = moverAtleta(series, origem[3].id, 1, 2, destino[1].id);
+
+    expect(resultado?.[0].atletas).toHaveLength(4);
+    expect(resultado?.[1].atletas).toHaveLength(4);
+    expect(resultado?.[0].atletas[3].atleta.id).toBe(destino[1].id);
+    expect(resultado?.[1].atletas[1].atleta.id).toBe(origem[3].id);
+    expect(resultado?.[0].atletas.slice(0, 3).map((item) => item.atleta.id)).toEqual(
+      origem.slice(0, 3).map((a) => a.id),
+    );
+    expect(resultado?.[1].atletas.map((item) => item.atleta.id)).toEqual([
+      destino[0].id,
+      origem[3].id,
+      destino[2].id,
+      destino[3].id,
+    ]);
+  });
+
+  it('recusa destino cheio sem alvo definido (raias nunca duplicam)', () => {
     const origem = [atleta(), atleta()];
     const destino = [atleta(), atleta(), atleta(), atleta()];
     const series = [serie(1, origem), serie(2, destino)];
 
-    expect(moverAtleta(series, origem[0].id, 1, 2, destino[0].id)).toBeNull();
+    expect(moverAtleta(series, origem[0].id, 1, 2)).toBeNull();
 
     // estado intacto após a tentativa
     expect(series[0].atletas).toHaveLength(2);

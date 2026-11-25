@@ -10,7 +10,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - **Exportar `.xlsx` na Balizamento e na Controle**: botão **"⬇️ Exportar XLSX"** (SheetJS, import dinâmico — o chunk só carrega no clique) gera `balizamento.xlsx` (Série, Baliza, Professor, Nome, Tempo, Medalha, Categoria, Nível) e `controle-resultados.xlsx` (mesmas colunas sem Professor); nova util `src/utils/xlsx.ts` com `exportXlsx()` espelhando a assinatura de `exportCSV`
 - **Resultados da Controle entram automaticamente no histórico da Análise**: `atualizarTempoAtleta` faz upsert em `historico` com o **ano atual** (2026) casando por `nome.trim().toLowerCase()` — mesmo aluno+ano **substitui** (correção de tempo atualiza a célula), senão acrescenta; cobre digitação e cronômetro; limpar o input (`tempo undefined`) **não** mexe no histórico (não apaga linha vinda de CSV); só atletas da base **Festival**
 - **Filtro de ano 2026 sempre visível na Análise**: chips e colunas do panorama passam a incluir o ano atual mesmo sem registros (células com "—"), pronto para futuras comparações; label "edição(ões)" conta só anos **com dados**
-- Testes: +4 em `useAppStore.test.ts` (insere no histórico, substitui mesmo aluno+ano, casa por nome com caixa/espaços diferentes, `tempo undefined` não altera) — 126 no total
+- Testes: +4 em `useAppStore.test.ts` (insere no histórico, substitui mesmo aluno+ano, casa por nome com caixa/espaços diferentes, `tempo undefined` não altera) e +2 de troca em `edicaoSeries.test.ts` — 128 no total
 - Dependência: `xlsx` (SheetJS 0.18.5)
 - **Contraste visual entre séries** nas telas de **Balizamento** e **Controle**: linhas com tinta alternada por índice (`bg-primary-50/70` nas séries pares, neutra nas ímpares, com hover próprio) e recorte `border-t-2` primary na primeira linha de cada série; `TabelaGenerica` ganhou a prop opcional `classeLinha` + export `classeLinhaSerie(indice, primeira)` (autocontida, sem conflito de classes de borda) — a área de impressão ficou intacta
 - **Snapshot das séries por filtro** na store (`seriesPorFiltro` + chave `periodo|genero`): trocar período/gênero salva o estado atual e restaura o do destino (ou gera na falta) — **edições manuais (drag/✕) sobrevivem à troca de filtro**; clique no chip de filtro já ativo virou no-op (não regenera mais)
@@ -20,13 +20,14 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - `filtrarAtletas()` exportado de `src/utils/balizamento.ts` (reutilizado por `balizar()` e pela store)
 
 ### Fixed
-- **Raias duplicadas no drag**: mover um atleta para uma série que já tem 4 atletas gerava série de 5+ → `reatribuirRaias` repetia a raia 1 no 5º; agora `moverAtleta()` bloqueia a movimentação com toast **"Série N já está completa (4 atletas)."**
+- **Raias duplicadas no drag**: mover um atleta para uma série que já tem 4 atletas gerava série de 5+ → `reatribuirRaias` repetia a raia 1 no 5º; agora `moverAtleta()` com série destino cheia e `alvoId` definido faz **troca** (ver Changed) e sem `alvoId` recusa a operação
 - **`removerAtletaDaSerie` descarta séries que ficam vazias** (antes só o caminho do drag filtrava — comportamento alinhado ao documentado no AGENTS.md)
 - **Séries antigas corrompidas reparadas na abertura** (série com 5+ atletas salva no navegador antes do teto de 4 — origem das balizas duplicadas *dentro da mesma série*): `sanearSeries()` roda no `merge` do persist (séries e snapshots por filtro) e no `importarCompartilhado` — corta para os 4 primeiros com raias reatribuídas (o excedente permanece na base e volta ao balizamento em "Atualizar") e renumera; dados válidos são no-op
 - **Numeração das séries não pula mais (ex.: 5 → 7)**: `renumerarSeries()` fecha lacunas (1, 3 → 1, 2) em toda mutação que pode esvaziar série (drag, ✕, upload) — `series` e `seriesPorFiltro` mantêm sempre 1..n
 - Testes: +11 (`renumerarSeries`, `sanearSeries`, renumeração em drag/✕/upload, import corrompido e rehydrate do persist) — 122 no total
 
 ### Changed
+- **Troca de atleta entre séries todas completas (Balizamento)**: ao arrastar um aluno sobre uma linha de série destino com 4 atletas, em vez do bloqueio "Série N já está completa", agora **troca** os dois — cada um assume a posição/raia do outro (ambas seguem com 4); `moverAtleta()` passa a devolver o swap quando `destino.length >= 4` e há `alvoId` (sem `alvoId` continua `null`); toast de sucesso `X trocado com Y (série N).` — séries com vaga seguem movendo normalmente
 - **Chip de raia do cronômetro**: `nomeCurto()` (`src/utils/nomes.ts`) — 1º e 2º nome do aluno **desconsiderando preposições/contrações** (`de, do, da, dos, das, no, na, nos, nas, em, com, por, para, a, o`) no texto e na contagem (ex.: `Maria de Paula Silva` → `Maria Paula`); `title` mantém o nome completo no hover
 - `importarCompartilhado` liga `edicoesManuais` quando o link traz séries (as séries recebidas são potencialmente editadas à mão e passam a sobreviver ao próximo upload)
 

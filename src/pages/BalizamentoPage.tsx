@@ -138,13 +138,9 @@ export function BalizamentoPage() {
     const linhaOver = linhas.find((linha) => linha.id === String(over.id));
     if (!linhaAtiva || !linhaOver) return;
 
-    if (linhaAtiva.serie !== linhaOver.serie) {
-      const destino = series.find((serie) => serie.numero === linhaOver.serie);
-      if (destino && destino.atletas.length >= 4) {
-        mostrarToast('erro', `Série ${linhaOver.serie} já está completa (4 atletas).`);
-        return;
-      }
-    }
+    const destino = series.find((serie) => serie.numero === linhaOver.serie);
+    const troca =
+      linhaAtiva.serie !== linhaOver.serie && destino !== undefined && destino.atletas.length >= 4;
 
     const novas = moverAtleta(
       series,
@@ -155,6 +151,13 @@ export function BalizamentoPage() {
     );
     if (!novas) return;
     reordenarSeries(novas);
+
+    if (troca) {
+      mostrarToast(
+        'sucesso',
+        `${linhaAtiva.item.atleta.nome} trocado com ${linhaOver.item.atleta.nome} (série ${linhaOver.serie}).`,
+      );
+    }
   }
 
   const colunas: Coluna<LinhaTabela>[] = [
