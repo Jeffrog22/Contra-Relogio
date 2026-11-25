@@ -49,8 +49,14 @@ export function AnalisePage() {
     mostrarToast('sucesso', `${eventos.length} registro(s) histórico(s) adicionado(s).`);
   }
 
-  const anos = useMemo(
-    () => [...new Set(historico.map((evento) => evento.ano))].sort((a, b) => a - b),
+  const anos = useMemo(() => {
+    const presentes = new Set(historico.map((evento) => evento.ano));
+    presentes.add(new Date().getFullYear());
+    return [...presentes].sort((a, b) => a - b);
+  }, [historico]);
+
+  const anosComDados = useMemo(
+    () => new Set(historico.map((evento) => evento.ano)).size,
     [historico],
   );
 
@@ -139,7 +145,7 @@ export function AnalisePage() {
             className="text-sm text-gray-600 dark:text-gray-400 file:mr-3 file:px-4 file:py-2 file:rounded-md file:border-0 file:text-sm file:bg-primary-600 file:text-white hover:file:bg-primary-700 file:transition-colors"
           />
           <span className="text-xs text-gray-500 dark:text-gray-400">
-            {historico.length} registro(s) • {anos.length} edição(ões)
+            {historico.length} registro(s) • {anosComDados} edição(ões)
           </span>
           {historico.length > 0 && (
             <Button variante="secondary" onClick={limparHistorico}>

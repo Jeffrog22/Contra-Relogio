@@ -96,6 +96,7 @@ Regras:
 - **Drag com teto de 4**: `moverAtleta(series, atletaId, de, para, alvoId?)` em `edicaoSeries.ts` retorna `null` quando a série destino tem **4 atletas** (a página mostra toast `Série N já está completa (4 atletas).` e aborta) e filtra séries que ficam vazias — série com 5+ faria `reatribuirRaias` repetir raia 1 (`raias[i] ?? 1`). `removerAtletaDaSerie` também filtra vazias. Raias de série ≤4 são sempre únicas (`raiasDaSerie`: 4→[1,2,3,4], 3→[2,3,4], 2→[1,2], 1→[1]).
 - **Contraste de séries na UI**: `classeLinhaSerie(indice, primeira)` exportada de `TabelaGenerica` — tinta alternada por **índice no array** (não por `numero`, por causa das lacunas de numeração), `border-b` fino + `border-t-2 border-t-primary-300` na **primeira linha de cada série**; a prop `classeLinha(item)` do `TabelaGenerica` substitui as classes padrão da `<tr>` (autocontida, sem conflito). `BalizamentoPage`/`ControlePage` adicionam `indiceSerie`/`primeira` às linhas e `LinhaSorteavel` recebe a mesma classe; **área de impressão intocada**.
 - **Numeração contígua + saneamento de dados legados**: invariante — `series` e `seriesPorFiltro` ficam sempre numeradas **1..n**. `renumerarSeries(series)` (em `edicaoSeries.ts`) fecha lacunas nas mutações que podem esvaziar série (`reordenarSeries`, `removerAtletaDaSerie`, `preservarSeries`; retorna o **mesmo array** se já contíguo). `sanearSeries(series)` (série >4 → corta para os 4 primeiros + `reatribuirRaias` + renumera; dado válido → mesma referência) roda no **`merge` do persist** (séries e snapshots) e no **`importarCompartilhado`** — é o que **repara sozinho séries corrompidas criadas antes do teto de 4** (sintoma: balizas duplicadas *dentro da mesma série* vindas do `localStorage`; o excedente permanece na base e volta em "Atualizar"). As utils puras (`moverAtleta`, `remapearPorNome`, `inserirAusentes`) **não** renumeram — a invariante é da store.
+- **Export `.xlsx` + auto-sync do histórico**: `exportXlsx(nome, campos, linhas)` em `src/utils/xlsx.ts` (SheetJS `xlsx`, **import dinâmico** — chunk separado no build, só carrega no clique) espelha a assinatura de `exportCSV`; usada só na Balizamento (`balizamento.xlsx`) e Controle (`controle-resultados.xlsx`). **`atualizarTempoAtleta` faz upsert em `historico`** com `ano = new Date().getFullYear()` (hoje 2026) casando por `nomeChave()` (trim+lowercase) — mesmo aluno+ano **substitui**, senão append; **`tempo === undefined` não mexe** no histórico (não apaga linha vinda de CSV — o input limpa durante a digitação); escopo é só a base **Festival** (edição de tempo na Lista via `atualizarAtleta` **não** sincroniza). Na Análise, `anos` = anos do histórico **∪ ano atual** (chip e coluna 2026 sempre existem, células vazias com "—") e o label "edição(ões)" usa `anosComDados` (só anos com registros).
 
 ---
 
@@ -923,6 +924,37 @@ pm run build OK
 - src/utils/edicaoSeries.ts
 - src/utils/edicaoSeries.test.ts
 - src/store/useAppStore.ts
+- src/store/useAppStore.test.ts
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 25/11/2026 — Export .xlsx (Balizamento/Controle) + auto-sync do histórico na Análise
+
+### O que foi feito
+- **Export .xlsx**: dependência `xlsx` (SheetJS 0.18.5) + nova util `src/utils/xlsx.ts` com `exportXlsx(nome, campos, linhas)` (import dinâmico — chunk `xlsx-*.js` separado no build, só carrega no clique); **BalizamentoPage** ganhou botão "⬇️ Exportar XLSX" ao lado de Atualizar (`balizamento.xlsx`: Série, Baliza, Professor, Nome, Tempo, Medalha, Categoria, Nível) e **ControlePage** ao lado de Imprimir (`controle-resultados.xlsx`: sem Professor); guard com toast "Nada a exportar." quando vazio
+- **Auto-sync do histórico**: `atualizarTempoAtleta` (store) agora faz upsert em `historico` após gravar o tempo — `ano = new Date().getFullYear()` (2026), casando por `nomeChave()` (trim+lowercase): mesmo aluno+ano substitui, senão append; campos `aluno, tempo, medalha (medalha ?? 'Sem Tempo'), categoria: categoriaOficial, genero`; **`tempo === undefined` não mexe** no histórico; escopo só a base Festival (edição na Lista via `atualizarAtleta` não sincroniza); cobre `TempoInput` e o `gravar()` do cronômetro
+- **Análise — filtro 2026 sempre visível**: `anos` virou união dos anos do histórico **+ ano atual** (`useMemo`) — chip e coluna 2026 existem mesmo sem registros (células com "—"); label "N edição(ões)" passou a usar `anosComDados` (só anos com dados, sem inflar a contagem)
+- Testes: **+4** em `useAppStore.test.ts` (insere no histórico com ano atual/medalha/categoria/gênero, substitui mesmo aluno+ano sem duplicar, casa por nome com caixa/espaços diferentes, `tempo undefined` não altera) — **126 testes, 0 falhas**; `npx tsc -b --force` 0 erros; `npm run build` OK (xlsx em chunk separado de 429 kB)
+
+### Decisões
+- Sync **automático a cada tempo** e **substituição** por aluno+ano (escolhas do usuário)
+- Ano usa `new Date().getFullYear()` (dinâmico — vale 2026 hoje e vira 2027 sozinho)
+- Limpar o input de tempo **não apaga** a linha do histórico (evita perder linha vinda de CSV durante a digitação)
+- Import dinâmico do SheetJS para não pesar o bundle inicial
+
+### Arquivos
+- package.json (+xlsx)
+- src/utils/xlsx.ts (novo)
+- src/pages/BalizamentoPage.tsx
+- src/pages/ControlePage.tsx
+- src/store/useAppStore.ts
+- src/pages/AnalisePage.tsx
 - src/store/useAppStore.test.ts
 - CHANGELOG.md
 - AGENTS.md

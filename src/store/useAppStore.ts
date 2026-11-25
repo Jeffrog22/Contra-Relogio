@@ -324,7 +324,31 @@ export const useAppStore = create<AppState>()(
           };
         }),
 
-      atualizarTempoAtleta: (id, tempo) => get().atualizarAtleta(id, { tempo }),
+      atualizarTempoAtleta: (id, tempo) => {
+        get().atualizarAtleta(id, { tempo });
+        if (tempo === undefined) return;
+        const atleta = get().atletas.find((a) => a.id === id);
+        if (!atleta) return;
+        const ano = new Date().getFullYear();
+        set((estado) => {
+          const chaveAluno = nomeChave(atleta.nome);
+          const evento: EventoHistorico = {
+            ano,
+            aluno: atleta.nome,
+            tempo,
+            medalha: atleta.medalha ?? 'Sem Tempo',
+            categoria: atleta.categoriaOficial,
+            genero: atleta.genero,
+          };
+          const indice = estado.historico.findIndex(
+            (e) => e.ano === ano && nomeChave(e.aluno) === chaveAluno,
+          );
+          if (indice === -1) return { historico: [...estado.historico, evento] };
+          const historico = [...estado.historico];
+          historico[indice] = evento;
+          return { historico };
+        });
+      },
 
       removerAtletaDaSerie: (serieNumero, atletaId) =>
         set((estado) => ({

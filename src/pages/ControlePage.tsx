@@ -8,6 +8,7 @@ import { Input } from '../components/ui/Input';
 import { MedalhaBadge } from '../components/ui/MedalhaBadge';
 import { TabelaGenerica, classeLinhaSerie } from '../components/ui/TabelaGenerica';
 import { CronometroSerie } from '../components/ui/CronometroSerie';
+import { exportXlsx } from '../utils/xlsx';
 
 function tempoParaMascara(tempo: number | undefined): string {
   if (!tempo) return '';
@@ -69,6 +70,28 @@ export function ControlePage() {
   const [modalAberto, setModalAberto] = useState(false);
   const [serieSelecionada, setSerieSelecionada] = useState<number | null>(null);
   const serieAtiva = series.find((s) => s.numero === serieSelecionada) ?? null;
+  const mostrarToast = useAppStore((estado) => estado.mostrarToast);
+
+  async function exportar() {
+    if (linhas.length === 0) {
+      mostrarToast('erro', 'Nada a exportar.');
+      return;
+    }
+    await exportXlsx(
+      'controle-resultados.xlsx',
+      ['Série', 'Baliza', 'Nome', 'Tempo', 'Medalha', 'Categoria', 'Nível'],
+      linhas.map((linha) => [
+        linha.serie,
+        linha.raia,
+        linha.atleta.nome,
+        formatTempo(linha.atleta.tempo),
+        linha.atleta.medalha ?? 'Sem Tempo',
+        linha.atleta.categoriaOficial,
+        linha.atleta.nivel,
+      ]),
+    );
+    mostrarToast('sucesso', `Resultados exportados (.xlsx) — ${linhas.length} linha(s).`);
+  }
 
   function abrirCronometro() {
     if (!serieAtiva) return;
@@ -184,7 +207,15 @@ export function ControlePage() {
             </p>
           )}
 
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Button
+              variante="secondary"
+              onClick={exportar}
+              disabled={linhas.length === 0}
+              className="disabled:opacity-50"
+            >
+              ⬇️ Exportar XLSX
+            </Button>
             <Button
               onClick={() => window.print()}
               disabled={linhas.length === 0}

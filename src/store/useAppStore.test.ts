@@ -217,6 +217,72 @@ describe('edições manuais', () => {
   });
 });
 
+describe('auto-sync do histórico (resultados da Controle)', () => {
+  it('atualizarTempoAtleta insere o resultado no histórico com o ano atual', () => {
+    const a1 = atleta();
+    useAppStore.setState({ atletas: [a1] });
+
+    useAppStore.getState().atualizarTempoAtleta(a1.id, 32.5);
+
+    const estado = useAppStore.getState();
+    expect(estado.historico).toHaveLength(1);
+    const evento = estado.historico[0];
+    expect(evento.ano).toBe(new Date().getFullYear());
+    expect(evento.aluno).toBe(a1.nome);
+    expect(evento.tempo).toBe(32.5);
+    expect(evento.categoria).toBe(a1.categoriaOficial);
+    expect(evento.genero).toBe(a1.genero);
+    expect(evento.medalha).toBe(estado.atletas[0].medalha);
+  });
+
+  it('substitui o registro do mesmo aluno+ano (sem duplicar)', () => {
+    const a1 = atleta();
+    useAppStore.setState({ atletas: [a1] });
+
+    useAppStore.getState().atualizarTempoAtleta(a1.id, 30);
+    useAppStore.getState().atualizarTempoAtleta(a1.id, 28.7);
+
+    const historico = useAppStore.getState().historico;
+    expect(historico).toHaveLength(1);
+    expect(historico[0].tempo).toBe(28.7);
+  });
+
+  it('casa o aluno por nome ignorando caixa e espaços', () => {
+    const a1 = atleta({ nome: 'Maria Silva' });
+    useAppStore.setState({
+      atletas: [a1],
+      historico: [
+        {
+          ano: new Date().getFullYear(),
+          aluno: '  maria silva ',
+          tempo: 33,
+          medalha: 'PRATA',
+          categoria: 'Petiz',
+        },
+      ],
+    });
+
+    useAppStore.getState().atualizarTempoAtleta(a1.id, 31);
+
+    const historico = useAppStore.getState().historico;
+    expect(historico).toHaveLength(1);
+    expect(historico[0].tempo).toBe(31);
+    expect(historico[0].aluno).toBe('Maria Silva');
+  });
+
+  it('tempo undefined (input limpo) não altera o histórico', () => {
+    const a1 = atleta();
+    useAppStore.setState({ atletas: [a1] });
+
+    useAppStore.getState().atualizarTempoAtleta(a1.id, 30);
+    useAppStore.getState().atualizarTempoAtleta(a1.id, undefined);
+
+    const historico = useAppStore.getState().historico;
+    expect(historico).toHaveLength(1);
+    expect(historico[0].tempo).toBe(30);
+  });
+});
+
 describe('reparo e numeração contígua', () => {
   it('removerAtletaDaSerie renumera as séries subsequentes (sem lacuna)', () => {
     const a1 = atleta();

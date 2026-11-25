@@ -10,6 +10,7 @@ import type { AtletaSerie, GeneroOpcao, PeriodoOpcao } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { formatTempo } from '../utils/medalhas';
 import { moverAtleta } from '../utils/edicaoSeries';
+import { exportXlsx } from '../utils/xlsx';
 import { Card, CardHeading } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Pill } from '../components/ui/Pill';
@@ -107,6 +108,28 @@ export function BalizamentoPage() {
       'sucesso',
       `${linha.item.atleta.nome} excluído da série ${linha.serie} (seguirá no balizamento ao atualizar).`,
     );
+  }
+
+  async function exportar() {
+    if (linhas.length === 0) {
+      mostrarToast('erro', 'Nada a exportar.');
+      return;
+    }
+    await exportXlsx(
+      'balizamento.xlsx',
+      ['Série', 'Baliza', 'Professor', 'Nome', 'Tempo', 'Medalha', 'Categoria', 'Nível'],
+      linhas.map((linha) => [
+        linha.serie,
+        linha.raia,
+        linha.item.atleta.professor,
+        linha.item.atleta.nome,
+        formatTempo(linha.item.atleta.tempo),
+        linha.item.atleta.medalha ?? 'Sem Tempo',
+        linha.item.atleta.categoriaOficial,
+        linha.item.atleta.nivel,
+      ]),
+    );
+    mostrarToast('sucesso', `Balizamento exportado (.xlsx) — ${linhas.length} linha(s).`);
   }
 
   function aoTerminarDrag({ active, over }: DragEndEvent) {
@@ -248,6 +271,9 @@ export function BalizamentoPage() {
             </Pill>
           ))}
           <Button onClick={() => executarBalizamento()}>Atualizar</Button>
+          <Button variante="secondary" onClick={exportar} disabled={linhas.length === 0} className="disabled:opacity-50">
+            ⬇️ Exportar XLSX
+          </Button>
           {atletas.length > 0 && (
             <span className="text-xs text-gray-500 dark:text-gray-400">
               {atletas.length} atleta(s) • {series.length} série(s)
