@@ -95,6 +95,7 @@ Regras:
 - **Upload com edições preserva por nome**: `preservarSeries()` (helper da store) roda em `processarAtletas` (só com `edicoesManuais`) e em `adicionarAtleta` — `remapearPorNome` casa por `nomeChave()` = `nome.trim().toLowerCase()` (**os ids mudam a cada `gerarId()`**, por isso é por nome) e `inserirAusentes` insere **apenas quem é realmente novo** (nome ausente da base anterior — exclusões manuais **não voltam**); regra de encaixe: mesma `categoriaOficial+nivel+genero` com <4 → mesma série; senão mesmo `genero` com <4 → anexa; senão cria série (`numero = max+1`); snapshots por filtro atualizados com o filtro de cada um. Helpers puros em `src/utils/edicaoSeries.ts`.
 - **Drag com teto de 4**: `moverAtleta(series, atletaId, de, para, alvoId?)` em `edicaoSeries.ts` retorna `null` quando a série destino tem **4 atletas** (a página mostra toast `Série N já está completa (4 atletas).` e aborta) e filtra séries que ficam vazias — série com 5+ faria `reatribuirRaias` repetir raia 1 (`raias[i] ?? 1`). `removerAtletaDaSerie` também filtra vazias. Raias de série ≤4 são sempre únicas (`raiasDaSerie`: 4→[1,2,3,4], 3→[2,3,4], 2→[1,2], 1→[1]).
 - **Contraste de séries na UI**: `classeLinhaSerie(indice, primeira)` exportada de `TabelaGenerica` — tinta alternada por **índice no array** (não por `numero`, por causa das lacunas de numeração), `border-b` fino + `border-t-2 border-t-primary-300` na **primeira linha de cada série**; a prop `classeLinha(item)` do `TabelaGenerica` substitui as classes padrão da `<tr>` (autocontida, sem conflito). `BalizamentoPage`/`ControlePage` adicionam `indiceSerie`/`primeira` às linhas e `LinhaSorteavel` recebe a mesma classe; **área de impressão intocada**.
+- **Numeração contígua + saneamento de dados legados**: invariante — `series` e `seriesPorFiltro` ficam sempre numeradas **1..n**. `renumerarSeries(series)` (em `edicaoSeries.ts`) fecha lacunas nas mutações que podem esvaziar série (`reordenarSeries`, `removerAtletaDaSerie`, `preservarSeries`; retorna o **mesmo array** se já contíguo). `sanearSeries(series)` (série >4 → corta para os 4 primeiros + `reatribuirRaias` + renumera; dado válido → mesma referência) roda no **`merge` do persist** (séries e snapshots) e no **`importarCompartilhado`** — é o que **repara sozinho séries corrompidas criadas antes do teto de 4** (sintoma: balizas duplicadas *dentro da mesma série* vindas do `localStorage`; o excedente permanece na base e volta em "Atualizar"). As utils puras (`moverAtleta`, `remapearPorNome`, `inserirAusentes`) **não** renumeram — a invariante é da store.
 
 ---
 
@@ -893,6 +894,36 @@ pm run build OK
 - src/components/ui/TabelaGenerica.tsx
 - src/pages/BalizamentoPage.tsx
 - src/pages/ControlePage.tsx
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 25/11/2026 — Reparo de séries corrompidas + numeração contígua
+
+### O que foi feito
+- **Diagnóstico** (relato do usuário testando o **site publicado**): balizas duplicadas **dentro da mesma série** + numeração pulando (5 → 7). Causas: série com 5+ atletas salva no `localStorage` (criada com o build antigo, antes do teto de 4 — o fix v1.3.0 impedia corrupção nova mas **não reparava as salvas**) e lacunas de numeração ao filtrar séries vazias (drag/✕/upload)
+- **`src/utils/edicaoSeries.ts`**: novos helpers puros `renumerarSeries(series)` (`numero = índice + 1`; retorna o **mesmo array** se já contíguo) e `sanearSeries(series)` (série >4 → corta para os 4 primeiros + `reatribuirRaias` + renumera; dado válido → mesma referência)
+- **`src/store/useAppStore.ts`** — aplicação nos pontos de escrita: **`merge` do persist** saneia `series` **e** cada snapshot de `seriesPorFiltro` (caminho do `localStorage` — o bug relatado); `importarCompartilhado` saneia `dados.series`; `reordenarSeries` (drag) e `removerAtletaDaSerie` (✕) renumeram após filtrar vazias; `preservarSeries` renumera a série ao vivo e cada snapshot no upload. `balizar()`, `setPeriodo`/`setGeneroBalizamento` e `atualizarAtleta` não precisaram mudar (saída já saneada)
+- Testes: **+11** — `edicaoSeries.test.ts` 15→21 (`renumerarSeries`: identidade/lacuna/vazia; `sanearSeries`: 5→4 com raias únicas, série válida intacta, no-op) e `useAppStore.test.ts` 9→14 (expect `numero` 2→1 no teste de série vazia; série do meio removida renumera `[1,3]`→`[1,2]`; `reordenarSeries` com lacuna; upload fecha lacuna; import corrompido; **rehydrate do persist** com JSON corrompido no `localStorage`) — **122 testes, 0 falhas**; `npx tsc -b --force` 0 erros; `npm run build` OK
+- Docs: CHANGELOG (Fixed), AGENTS.md (Contexto Crítico + esta sessão)
+
+### Decisões
+- **Cortar para 4** (escolha do usuário): o excedente permanece na base e volta ao balizamento em "Atualizar" — em vez de realocar na hora (podia misturar categorias) ou regenerar tudo na abertura (perdia todas as edições manuais)
+- **Sem edição livre de baliza por duplo clique** (escolha do usuário): o conserto automático + renumeração bastam para o relatado
+- Renumerar **só na store** (a invariante 1..n é da store); as utils puras (`moverAtleta`, `remapearPorNome`, `inserirAusentes`) seguem sem renumeração — os testes de comportamento delas não mudam
+- `sanearSeries` é no-op em dado limpo (mesma referência) → zero churn no carregamento normal
+- Publicação: após o push é preciso **Ctrl+F5** no site (bundle novo) — o `localStorage` corrompido é reparado sozinho na primeira abertura; até o deploy chegar, o build antigo continua criando corrupção nova
+
+### Arquivos
+- src/utils/edicaoSeries.ts
+- src/utils/edicaoSeries.test.ts
+- src/store/useAppStore.ts
+- src/store/useAppStore.test.ts
 - CHANGELOG.md
 - AGENTS.md
 

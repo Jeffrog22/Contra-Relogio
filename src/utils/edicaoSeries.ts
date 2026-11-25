@@ -142,3 +142,32 @@ export function inserirAusentes(series: Serie[], novos: Atleta[]): Serie[] {
 
   return resultado.filter((serie) => serie.atletas.length > 0).map((serie) => reatribuirRaias(serie));
 }
+
+/**
+ * Renumera as séries de 1 a n na ordem do array, fechando lacunas
+ * deixadas por séries removidas (ex.: 1, 3 → 1, 2). Retorna o mesmo
+ * array quando a numeração já está contígua (evita re-render à toa).
+ */
+export function renumerarSeries(series: Serie[]): Serie[] {
+  if (series.every((serie, indice) => serie.numero === indice + 1)) return series;
+  return series.map((serie, indice) => ({ ...serie, numero: indice + 1 }));
+}
+
+/**
+ * Repara dados legados/corrompidos (criados antes do teto de 4 atletas):
+ * séries com mais de 4 são cortadas para os 4 primeiros com raias
+ * reatribuídas (o excedente permanece na base e volta ao balizamento
+ * em "Atualizar") e a numeração é refeita de 1 a n.
+ * Dados válidos retornam a mesma referência.
+ */
+export function sanearSeries(series: Serie[]): Serie[] {
+  if (!series.some((serie) => serie.atletas.length > 4)) {
+    return renumerarSeries(series);
+  }
+  const cortadas = series.map((serie) =>
+    serie.atletas.length > 4
+      ? reatribuirRaias({ ...serie, atletas: serie.atletas.slice(0, 4) })
+      : serie,
+  );
+  return renumerarSeries(cortadas);
+}

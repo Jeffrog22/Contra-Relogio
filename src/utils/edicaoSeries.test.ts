@@ -7,6 +7,8 @@ import {
   moverAtleta,
   nomeChave,
   remapearPorNome,
+  renumerarSeries,
+  sanearSeries,
   separarChaveFiltro,
 } from './edicaoSeries';
 
@@ -224,5 +226,66 @@ describe('inserirAusentes', () => {
     expect(resultado[0].atletas.map((item) => item.raia)).toEqual([1, 2, 3, 4]);
     expect(resultado[1].atletas.map((item) => item.raia)).toEqual([1, 2, 3, 4]);
     expect(resultado.every(raiasUnicas)).toBe(true);
+  });
+});
+
+describe('renumerarSeries', () => {
+  it('retorna o mesmo array quando a numeração já está contígua', () => {
+    const series = [serie(1, [atleta()]), serie(2, [atleta()])];
+
+    expect(renumerarSeries(series)).toBe(series);
+  });
+
+  it('fecha lacunas preservando ordem, atletas e raias', () => {
+    const a = atleta();
+    const b = atleta();
+    const c = atleta();
+    const series = [serie(1, [a]), serie(3, [b, c])];
+
+    const resultado = renumerarSeries(series);
+
+    expect(resultado.map((s) => s.numero)).toEqual([1, 2]);
+    expect(resultado[1].atletas.map((item) => item.atleta.id)).toEqual([b.id, c.id]);
+    expect(resultado[1].atletas.map((item) => item.raia)).toEqual([1, 2]);
+  });
+
+  it('lista vazia devolve a mesma referência', () => {
+    expect(renumerarSeries([])).toEqual([]);
+  });
+});
+
+describe('sanearSeries', () => {
+  it('corta série de 5 com baliza duplicada (dado legado) para 4 únicas', () => {
+    const cinco = [atleta(), atleta(), atleta(), atleta(), atleta()];
+    const base = serie(1, cinco.slice(0, 4));
+    const corrompida: Serie = {
+      ...base,
+      atletas: [...base.atletas, { atleta: cinco[4], raia: 1 }],
+    };
+
+    const resultado = sanearSeries([corrompida, serie(3, [atleta()])]);
+
+    expect(resultado).toHaveLength(2);
+    expect(resultado[0].atletas).toHaveLength(4);
+    expect(raiasUnicas(resultado[0])).toBe(true);
+    expect(resultado.map((s) => s.numero)).toEqual([1, 2]);
+  });
+
+  it('série válida mantém os 4 atletas e as raias originais', () => {
+    const quatro = [atleta(), atleta(), atleta(), atleta()];
+    const series = [serie(1, quatro)];
+
+    const resultado = sanearSeries(series);
+
+    expect(resultado[0].atletas.map((item) => item.atleta.id)).toEqual(
+      quatro.map((a) => a.id),
+    );
+    expect(resultado[0].atletas.map((item) => item.raia)).toEqual([1, 2, 3, 4]);
+  });
+
+  it('dado limpo retorna a mesma referência (no-op)', () => {
+    const series = [serie(1, [atleta(), atleta()]), serie(2, [atleta()])];
+
+    expect(sanearSeries(series)).toBe(series);
   });
 });

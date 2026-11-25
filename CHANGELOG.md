@@ -17,6 +17,9 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ### Fixed
 - **Raias duplicadas no drag**: mover um atleta para uma série que já tem 4 atletas gerava série de 5+ → `reatribuirRaias` repetia a raia 1 no 5º; agora `moverAtleta()` bloqueia a movimentação com toast **"Série N já está completa (4 atletas)."**
 - **`removerAtletaDaSerie` descarta séries que ficam vazias** (antes só o caminho do drag filtrava — comportamento alinhado ao documentado no AGENTS.md)
+- **Séries antigas corrompidas reparadas na abertura** (série com 5+ atletas salva no navegador antes do teto de 4 — origem das balizas duplicadas *dentro da mesma série*): `sanearSeries()` roda no `merge` do persist (séries e snapshots por filtro) e no `importarCompartilhado` — corta para os 4 primeiros com raias reatribuídas (o excedente permanece na base e volta ao balizamento em "Atualizar") e renumera; dados válidos são no-op
+- **Numeração das séries não pula mais (ex.: 5 → 7)**: `renumerarSeries()` fecha lacunas (1, 3 → 1, 2) em toda mutação que pode esvaziar série (drag, ✕, upload) — `series` e `seriesPorFiltro` mantêm sempre 1..n
+- Testes: +11 (`renumerarSeries`, `sanearSeries`, renumeração em drag/✕/upload, import corrompido e rehydrate do persist) — 122 no total
 
 ### Changed
 - **Chip de raia do cronômetro**: `nomeCurto()` (`src/utils/nomes.ts`) — 1º e 2º nome do aluno **desconsiderando preposições/contrações** (`de, do, da, dos, das, no, na, nos, nas, em, com, por, para, a, o`) no texto e na contagem (ex.: `Maria de Paula Silva` → `Maria Paula`); `title` mantém o nome completo no hover

@@ -14,6 +14,8 @@ import {
   inserirAusentes,
   nomeChave,
   remapearPorNome,
+  renumerarSeries,
+  sanearSeries,
   separarChaveFiltro,
 } from '../utils/edicaoSeries';
 import { calcularMedalha } from '../utils/medalhas';
@@ -75,13 +77,15 @@ function preservarSeries(
   const novosSnapshots: Record<string, Serie[]> = {};
   for (const [chave, snapshot] of Object.entries(seriesPorFiltro)) {
     const { periodo: p, genero: g } = separarChaveFiltro(chave);
-    novosSnapshots[chave] = inserirAusentes(
-      remapearPorNome(snapshot, atletas),
-      novosDe(p, g),
+    novosSnapshots[chave] = renumerarSeries(
+      inserirAusentes(
+        remapearPorNome(snapshot, atletas),
+        novosDe(p, g),
+      ),
     );
   }
 
-  return { series: novasSeries, seriesPorFiltro: novosSnapshots };
+  return { series: renumerarSeries(novasSeries), seriesPorFiltro: novosSnapshots };
 }
 
 interface AppState {
@@ -159,7 +163,7 @@ export const useAppStore = create<AppState>()(
         set({
           atletas: dados.atletas,
           atletasApresentacao: dados.atletasApresentacao,
-          series: dados.series,
+          series: sanearSeries(dados.series),
           seriesPorFiltro: {},
           edicoesManuais: dados.series.length > 0,
           periodo: dados.periodo,
@@ -325,22 +329,24 @@ export const useAppStore = create<AppState>()(
       removerAtletaDaSerie: (serieNumero, atletaId) =>
         set((estado) => ({
           edicoesManuais: true,
-          series: estado.series
-            .map((serie) =>
-              serie.numero === serieNumero
-                ? reatribuirRaias({
-                    ...serie,
-                    atletas: serie.atletas.filter((item) => item.atleta.id !== atletaId),
-                  })
-                : serie,
-            )
-            .filter((serie) => serie.atletas.length > 0),
+          series: renumerarSeries(
+            estado.series
+              .map((serie) =>
+                serie.numero === serieNumero
+                  ? reatribuirRaias({
+                      ...serie,
+                      atletas: serie.atletas.filter((item) => item.atleta.id !== atletaId),
+                    })
+                  : serie,
+              )
+              .filter((serie) => serie.atletas.length > 0),
+          ),
         })),
 
       reordenarSeries: (novasSeries) =>
         set({
           edicoesManuais: true,
-          series: novasSeries.map((serie) => reatribuirRaias(serie)),
+          series: renumerarSeries(novasSeries.map((serie) => reatribuirRaias(serie))),
         }),
 
       adicionarHistorico: (eventos) =>
@@ -387,7 +393,13 @@ export const useAppStore = create<AppState>()(
         return {
           ...atual,
           ...parcial,
-          seriesPorFiltro: parcial?.seriesPorFiltro ?? {},
+          series: sanearSeries(parcial?.series ?? atual.series),
+          seriesPorFiltro: Object.fromEntries(
+            Object.entries(parcial?.seriesPorFiltro ?? {}).map(([chave, snapshot]) => [
+              chave,
+              sanearSeries(snapshot),
+            ]),
+          ),
           edicoesManuais: parcial?.edicoesManuais ?? false,
         };
       },

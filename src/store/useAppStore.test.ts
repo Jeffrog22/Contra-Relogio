@@ -181,7 +181,7 @@ describe('edições manuais', () => {
 
     const estado = useAppStore.getState();
     expect(estado.series).toHaveLength(1);
-    expect(estado.series[0].numero).toBe(2);
+    expect(estado.series[0].numero).toBe(1);
     expect(estado.edicoesManuais).toBe(true);
   });
 
@@ -214,5 +214,106 @@ describe('edições manuais', () => {
     expect(estado.series).toEqual([]);
     expect(estado.seriesPorFiltro).toEqual({});
     expect(estado.edicoesManuais).toBe(false);
+  });
+});
+
+describe('reparo e numeração contígua', () => {
+  it('removerAtletaDaSerie renumera as séries subsequentes (sem lacuna)', () => {
+    const a1 = atleta();
+    const a2 = atleta();
+    const a3 = atleta();
+    useAppStore.setState({
+      atletas: [a1, a2, a3],
+      series: [serie(1, [a1]), serie(2, [a2]), serie(3, [a3])],
+    });
+
+    useAppStore.getState().removerAtletaDaSerie(2, a2.id);
+
+    const estado = useAppStore.getState();
+    expect(estado.series.map((s) => s.numero)).toEqual([1, 2]);
+    expect(nomes(estado.series[1])).toEqual([a3.nome]);
+  });
+
+  it('reordenarSeries renumera entrada que já chega com lacuna', () => {
+    const a1 = atleta();
+    const a2 = atleta();
+    useAppStore.setState({ atletas: [a1, a2], series: [] });
+
+    useAppStore.getState().reordenarSeries([serie(3, [a1]), serie(5, [a2])]);
+
+    expect(useAppStore.getState().series.map((s) => s.numero)).toEqual([1, 2]);
+  });
+
+  it('upload com lacuna de numeração fecha a sequência', () => {
+    const antigos = [atleta(), atleta()];
+    useAppStore.setState({
+      atletas: antigos,
+      series: [serie(1, [antigos[0]]), serie(3, [antigos[1]])],
+      edicoesManuais: true,
+    });
+
+    useAppStore.getState().processarAtletas(antigos);
+
+    expect(useAppStore.getState().series.map((s) => s.numero)).toEqual([1, 2]);
+  });
+
+  it('importarCompartilhado corta série corrompida de 5 para 4 e renumera', () => {
+    const cinco = [atleta(), atleta(), atleta(), atleta(), atleta()];
+    const base = serie(1, cinco.slice(0, 4));
+    const corrompida: Serie = {
+      ...base,
+      atletas: [...base.atletas, { atleta: cinco[4], raia: 1 }],
+    };
+
+    useAppStore.getState().importarCompartilhado({
+      atletas: cinco,
+      atletasApresentacao: [],
+      series: [corrompida, serie(4, [atleta()])],
+      periodo: 'geral',
+      generoBalizamento: 'todos',
+      historico: [],
+    });
+
+    const estado = useAppStore.getState();
+    expect(estado.series).toHaveLength(2);
+    expect(estado.series[0].atletas).toHaveLength(4);
+    expect(new Set(estado.series[0].atletas.map((item) => item.raia)).size).toBe(4);
+    expect(estado.series.map((s) => s.numero)).toEqual([1, 2]);
+    expect(estado.edicoesManuais).toBe(true);
+  });
+
+  it('repara dados antigos na abertura (merge do persist)', async () => {
+    const cinco = [atleta(), atleta(), atleta(), atleta(), atleta()];
+    const base = serie(1, cinco.slice(0, 4));
+    const corrompida: Serie = {
+      ...base,
+      atletas: [...base.atletas, { atleta: cinco[4], raia: 1 }],
+    };
+    localStorage.setItem(
+      'festival-storage',
+      JSON.stringify({
+        state: {
+          atletas: cinco,
+          atletasApresentacao: [],
+          series: [corrompida, serie(3, [atleta()])],
+          seriesPorFiltro: { 'geral|todos': [corrompida] },
+          edicoesManuais: true,
+          periodo: 'geral',
+          generoBalizamento: 'todos',
+          historico: [],
+        },
+        version: 0,
+      }),
+    );
+
+    await useAppStore.persist.rehydrate();
+
+    const estado = useAppStore.getState();
+    expect(estado.series).toHaveLength(2);
+    expect(estado.series[0].atletas).toHaveLength(4);
+    expect(new Set(estado.series[0].atletas.map((item) => item.raia)).size).toBe(4);
+    expect(estado.series.map((s) => s.numero)).toEqual([1, 2]);
+    expect(estado.seriesPorFiltro['geral|todos'][0].atletas).toHaveLength(4);
+    expect(estado.edicoesManuais).toBe(true);
   });
 });
