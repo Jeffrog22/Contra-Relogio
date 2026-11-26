@@ -91,7 +91,7 @@ Regras:
 - **Repo usa o kit de documentação**: hook `.githooks/post-commit` cria tags SemVer; sessões registradas via `scripts/nova-sessao.ps1`; nunca criar SESSION.md.
 - **Adição manual de atleta**: `adicionarAtleta(dados)` no store retorna `boolean` (`false` = categoria inválida ou nome duplicado case-insensitive — toast emitido pelo próprio store); monta o `Atleta` completo (`gerarId`, `categoriaPorIdade`, `calcularMedalha`) e re-executa `balizar()` **só se já existirem séries** (mesmo descarte de ajustes manuais dos filtros). `Modal` (DS) teve o primeiro uso real aqui.
 - **Cronômetro da Controle (reescrito)**: estado **local do hook** `useCronometro` (não na store) — `pendentes` (chegadas em sequência ordinal) + `atribuicoes` (ordem→atletaId); **clique curto no Parar** captura o tempo atual (1 clique = 1 chegada, até a série toda → para sozinho + toast "Todas as chegadas capturadas!"); **segurar Parar 3s zera** tempo e pendentes (botões com `user-select:none`, contextmenu bloqueado e `touch-callout:none`); **auto-atribuição do último chip**: com exatamente 1 chip livre e 1 pendente sem chip, atribui sozinho (2+ chips espera o arraste; devolver chip à zona `chips-livre` desatribui); **Registrar** grava via `atualizarTempoAtleta(id, Number((ms/1000).toFixed(2)))` e fecha o modal. Modal **não arrasta** (fixo centralizado rente ao topo); quem arrasta são os **botões Iniciar/Parar** (pointer events + limiar 6px, posição em `localStorage` `festival-crono-btns`); chips de raia usam `@dnd-kit` (droppable = célula Baliza `pend-{ordem}` e zona `chips-livre`).
-- **Drag & drop em touch**: todo elemento **arrastável** do `@dnd-kit` (`useDraggable`/`useSortable`) precisa da classe **`touch-none`** (`touch-action: none`) — sem ela o Chrome mobile rola a página e dispara `pointercancel` antes do `PointerSensor` ativar (desktop nunca é afetado). Padrão já usado nos botões Iniciar/Parar, chips (`ChipRaia`) e linhas da edição (`LinhaSorteavel`); droppables não precisam.
+- **Drag & drop em touch**: todo elemento **arrastável** do `@dnd-kit` (`useDraggable`/`useSortable`) precisa da classe **`touch-none`** (`touch-action: none`) — sem ela o Chrome mobile rola a página e dispara `pointercancel` antes do `PointerSensor` ativar (desktop nunca é afetado). **`touch-action` NÃO se aplica a `<tr>`** (MDN: "Applies to … except … table rows/row groups") — por isso arrasto em linha de tabela exige um **drag handle** (botão/div dentro da célula) com `touch-none`, padrão recomendado pelo próprio dnd-kit; `LinhaSorteavel` usa o grip `⠿` da coluna-grip (colunas: listeners/attributes no botão, `<tr>` só com `setNodeRef`/transform). Padrão já usado nos botões Iniciar/Parar, chips (`ChipRaia`) e no grip; droppables não precisam.
 - **Snapshot por filtro + flag de edição**: store tem `seriesPorFiltro: Record<string, Serie[]>` (chave `chaveFiltro(periodo, genero)` = `` `${periodo}|${genero}` ``) e `edicoesManuais: boolean` (ambos no `partialize` de `festival-storage`, com `merge` custom que default `{} / false` para localStorage antigo). `setPeriodo`/`setGeneroBalizamento` **salvam as séries atuais na chave atual e restauram a do destino** (na falta, `balizar()`); o snapshot do destino é apagado ao restaurar (invariante: a chave atual nunca fica no mapa) e clicar no chip já ativo é **no-op**. `edicoesManuais` sobe em `removerAtletaDaSerie`/`reordenarSeries` e só desce em `limparAtletas('festival')`, `processarAtletas` sem edições e `importarCompartilhado` (que liga `true` se o link traz séries); `executarBalizamento` (Atualizar) regenera sob demanda e **não** mexe na flag. `atualizarAtleta` sincroniza as cópias também nos snapshots.
 - **Upload com edições preserva por nome**: `preservarSeries()` (helper da store) roda em `processarAtletas` (só com `edicoesManuais`) e em `adicionarAtleta` — `remapearPorNome` casa por `nomeChave()` = `nome.trim().toLowerCase()` (**os ids mudam a cada `gerarId()`**, por isso é por nome) e `inserirAusentes` insere **apenas quem é realmente novo** (nome ausente da base anterior — exclusões manuais **não voltam**); regra de encaixe: mesma `categoriaOficial+nivel+genero` com <4 → mesma série; senão mesmo `genero` com <4 → anexa; senão cria série (`numero = max+1`); snapshots por filtro atualizados com o filtro de cada um. Helpers puros em `src/utils/edicaoSeries.ts`.
 - **Drag com teto de 4 → troca**: `moverAtleta(series, atletaId, de, para, alvoId?)` em `edicaoSeries.ts` — série destino **<4** → move normalmente (filtra séries vazias); série destino **=4 com `alvoId`** → **troca** os dois (cada um assume a posição do outro, tamanhos preservados — as duas seguem cheias se ambas tinham 4); destino =4 **sem `alvoId`** → `null` (sem alvo não há com quem trocar). A página não bloqueia mais o drag: em troca mostra toast `X trocado com Y (série N).` Série com 5+ faria `reatribuirRaias` repetir raia 1 (`raias[i] ?? 1`). `removerAtletaDaSerie` filtra vazias. Raias de série ≤4 são sempre únicas (`raiasDaSerie`: 4→[1,2,3,4], 3→[2,3,4], 2→[1,2], 1→[1]).
@@ -1236,6 +1236,33 @@ pm run build OK
 - Guards de evento (`onDragStart`/`onContextMenu` preventDefault) junto com o CSS — defesa em profundidade sem mudar o sensor/limiar do dnd-kit
 - Proteção da tabela inteira condicionada a `modoEdicao` para não afetar o modo normal (seleção/cópia de nomes)
 - Mesmo padrão já usado no modal do cronômetro (`select-none` em `CronometroSerie.tsx`)
+
+### Arquivos
+- src/pages/BalizamentoPage.tsx
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+
+---
+
+## Sessão: 26/11/2026 — Fix: grip de arrasto na edição do balizamento (touch-action não se aplica a <tr>)
+
+### O que foi feito
+- **Diagnóstico** (relato: seleção bloqueada com sucesso, mas arrasto **ainda** não funcionava no mobile): causa raiz na spec do CSS — **`touch-action` não se aplica a `<tr>`** (MDN: "Applies to … except … non-replaced inline elements, **table rows**, row groups, table columns, column groups"). O `touch-none` na linha era **ignorado pelo navegador** → o Chrome mobile continuava interpretando o gesto como rolagem → `pointercancel` → `PointerSensor` morria antes do drag; a doc do dnd-kit recomenda exatamente o padrão pedido: **drag handle com `touch-action: none` só no handle** (a lista continua rolável)
+- **`src/pages/BalizamentoPage.tsx`**:
+  - Nova **coluna grip** em `colunas` (só com `modoEdicao`, primeira posição, `titulo: ''`, `render: () => null`) — mantém header/células alinhados
+  - **`LinhaSorteavel`**: descarta a célula da coluna grip e renderiza `<td>` com **botão `⠿`** recebe `{...attributes} {...listeners}` + `touch-none select-none [-webkit-touch-callout:none] cursor-grab active:cursor-grabbing` + `onDragStart` preventDefault + `aria-label`/`title`; **`<tr>` perdeu `listeners`/`attributes`** (ficou só `setNodeRef`, transform, `onContextMenu` preventDefault e o estilo de `isDragging`) — `touch-none`/`cursor-grab`/`select-none` removidos da linha (o `select-none` da tabela inteira no modo edição já cobre)
+- Verificação: `npx tsc -b --force` 0 erros; **144 testes, 0 falhas**; `npm run build` OK + sanity no bundle (`touch-action:none`, `select-none`, `Reordenar`, `⠿` presentes)
+- Docs: CHANGELOG (Fixed), AGENTS.md (Contexto Crítico atualizado + esta sessão)
+
+### Decisões
+- **Grip `⠿` em coluna própria à esquerda** (padrão dnd-kit) — coluna existe **só no modo edição**; desktop passa a arrastar pelo grip em vez da linha inteira (UX pedido pelo usuário)
+- Listeners **só** no botão: arrasto por toque funciona (`<button>` aceita `touch-action`) e **rolar a página tocando nas linhas volta a funcionar** no modo edição (antes a linha inteira com `touch-none` — que ainda por cima era ignorado — não ajudava em nada)
+- Sensores intocados (`PointerSensor` distance 8 — correto); chips/botões do cronômetro e Controle não precisaram de mudança (já são elementos válidos p/ `touch-action`)
 
 ### Arquivos
 - src/pages/BalizamentoPage.tsx

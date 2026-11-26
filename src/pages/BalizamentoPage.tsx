@@ -51,19 +51,29 @@ function LinhaSorteavel({ linha, celulas, classe }: LinhaSorteavelProps) {
     id: linha.id,
   });
 
+  const [, ...resto] = celulas;
+
   return (
     <tr
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`${classe} cursor-grab active:cursor-grabbing touch-none select-none [-webkit-touch-callout:none]${
-        isDragging ? ' opacity-60 relative z-10' : ''
-      }`}
-      onDragStart={(e) => e.preventDefault()}
+      className={`${classe}${isDragging ? ' opacity-60 relative z-10' : ''}`}
       onContextMenu={(e) => e.preventDefault()}
-      {...attributes}
-      {...listeners}
     >
-      {celulas}
+      <td key="grip" className="px-2 py-2 text-center align-middle">
+        <button
+          type="button"
+          aria-label={`Reordenar ${linha.item.atleta.nome}`}
+          title="Arraste para reordenar"
+          className="inline-flex items-center justify-center w-8 h-8 rounded text-gray-400 hover:text-primary-600 dark:text-gray-500 dark:hover:text-primary-400 cursor-grab active:cursor-grabbing touch-none select-none [-webkit-touch-callout:none]"
+          onDragStart={(e) => e.preventDefault()}
+          {...attributes}
+          {...listeners}
+        >
+          ⠿
+        </button>
+      </td>
+      {resto}
     </tr>
   );
 }
@@ -163,6 +173,9 @@ export function BalizamentoPage() {
   }
 
   const colunas: Coluna<LinhaTabela>[] = [
+    ...(modoEdicao
+      ? [{ chave: 'grip', titulo: '', render: () => null }]
+      : []),
     {
       chave: 'serie',
       titulo: 'Série',
