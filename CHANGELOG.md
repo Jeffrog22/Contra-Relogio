@@ -7,6 +7,19 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 ### Added
+- **PWA instalável com cache offline**: `vite-plugin-pwa` (Workbox) no `vite.config.ts` — manifest (`Festival Interno`, standalone, tema `#2563eb`), service worker com precache (54 entradas) e `navigateFallback` para a SPA; `registerType: 'autoUpdate'` (atualização silenciosa); ícones gerados em `public/` (`icon-192.png`, `icon-512.png`, `icon-maskable.png`, `apple-touch-icon.png`); `public/_headers` com `Cache-Control: no-cache` em `/sw.js` e `/manifest.webmanifest` (Cloudflare Pages); meta description + apple-touch-icon no `index.html`
+- **Zoom de acessibilidade (A− / A+) na TopBar**: níveis fixos 90% → 100% → 110% → 125% → 150% com clamp nas extremidades (botões desabilitados); aplicação via CSS `zoom` no `<html>` (escala px e rem); persistência por dispositivo em `localStorage` (`festival-zoom`) aplicada antes do render (anti-flash, junto ao tema); nova util `src/utils/zoom.ts` + 8 testes
+- **Compartilhar via share nativo**: o botão 🔗 usa `navigator.share()` quando disponível (mobile/WhatsApp — abre a folha de compartilhamento do sistema) com fallback para copiar para a área de transferência no desktop
+
+### Changed
+- **Link compartilhado muito menor (payload `v: 2`)**: `compartilhar.ts` agora serializa séries com atletas **referenciados por id** (elimina a duplicação dos objetos completos embutidos em cada série) e remove campos derivados (`medalha`, `categoriaCalculada`) — recalculados na importação via `calcularMedalha`/`categoriaPorIdade`; links antigos `v: 1` continuam aceitos (retrocompatibilidade); referências a id inexistente são descartadas sem quebrar
+- **Compartilhar**: `importarCompartilhado` força `sidebarAberta: true` — o destinatário do link sempre vê o menu de navegação completo
+
+### Fixed
+- **Link compartilhado sem menu de navegação (página falhava ao abrir)**: `importarLinkNoBoot()` em `main.tsx` agora roda dentro de `try/catch/finally` — o React **sempre** monta mesmo com link inválido/corrompido; o `history.replaceState` (limpeza do hash) roda no `finally`
+- **Fixture de teste**: atleta de 10 anos com categoria consistente (`Mirim`) e medalha `Sem Tempo` em atleta sem tempo no roundtrip do compartilhar
+
+### Added
 - **Exportar `.xlsx` na Balizamento e na Controle**: botão **"⬇️ Exportar XLSX"** (SheetJS, import dinâmico — o chunk só carrega no clique) gera `balizamento.xlsx` (Série, Baliza, Professor, Nome, Tempo, Medalha, Categoria, Nível) e `controle-resultados.xlsx` (mesmas colunas sem Professor); nova util `src/utils/xlsx.ts` com `exportXlsx()` espelhando a assinatura de `exportCSV`
 - **Resultados da Controle entram automaticamente no histórico da Análise**: `atualizarTempoAtleta` faz upsert em `historico` com o **ano atual** (2026) casando por `nome.trim().toLowerCase()` — mesmo aluno+ano **substitui** (correção de tempo atualiza a célula), senão acrescenta; cobre digitação e cronômetro; limpar o input (`tempo undefined`) **não** mexe no histórico (não apaga linha vinda de CSV); só atletas da base **Festival**
 - **Filtro de ano 2026 sempre visível na Análise**: chips e colunas do panorama passam a incluir o ano atual mesmo sem registros (células com "—"), pronto para futuras comparações; label "edição(ões)" conta só anos **com dados**

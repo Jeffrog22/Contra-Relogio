@@ -1,5 +1,14 @@
+import { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { montarLink } from '../../utils/compartilhar';
+import {
+  NIVEIS_ZOOM,
+  aplicarZoom,
+  lerZoomSalvo,
+  salvarZoom,
+  zoomVizinho,
+  type ZoomNivel,
+} from '../../utils/zoom';
 import { Button } from '../ui/Button';
 
 async function copiarParaAreaTransferencia(texto: string): Promise<boolean> {
@@ -27,6 +36,7 @@ export function TopBar() {
   const tema = useAppStore((estado) => estado.tema);
   const alternarTema = useAppStore((estado) => estado.alternarTema);
   const mostrarToast = useAppStore((estado) => estado.mostrarToast);
+  const [zoom, setZoom] = useState<ZoomNivel>(() => lerZoomSalvo());
 
   async function compartilhar() {
     const estado = useAppStore.getState();
@@ -53,6 +63,20 @@ export function TopBar() {
       return;
     }
 
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: 'Festival Interno',
+          text: 'Dados do Festival Contra Relógio:',
+          url: link,
+        });
+        mostrarToast('sucesso', 'Link compartilhado.');
+        return;
+      } catch {
+        /* usuário cancelou ou share indisponível — cai para o copy */
+      }
+    }
+
     const copiado = await copiarParaAreaTransferencia(link);
     if (copiado) {
       mostrarToast('sucesso', 'Link copiado com todos os dados embutidos.');
@@ -60,6 +84,16 @@ export function TopBar() {
       mostrarToast('erro', 'Não foi possível copiar o link.');
     }
   }
+
+  function ajustarZoom(direcao: -1 | 1) {
+    const proximo = zoomVizinho(zoom, direcao) as ZoomNivel;
+    if (proximo === zoom) return;
+    setZoom(proximo);
+    aplicarZoom(proximo);
+    salvarZoom(proximo);
+  }
+
+  const indiceZoom = (NIVEIS_ZOOM as readonly number[]).indexOf(zoom);
 
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-[57px] flex items-center justify-between px-4 no-print">
@@ -73,10 +107,28 @@ export function TopBar() {
         <Button
           variante="ghost"
           onClick={compartilhar}
-          aria-label="Copiar link com dados"
-          title="Copiar link com todos os dados embutidos"
+          aria-label="Compartilhar link com dados"
+          title="Compartilhar link com todos os dados embutidos"
         >
           <span className="text-lg leading-none">🔗</span>
+        </Button>
+        <Button
+          variante="ghost"
+          onClick={() => ajustarZoom(-1)}
+          aria-label="Diminuir zoom"
+          title={`Diminuir zoom (atual: ${Math.round(zoom * 100)}%)`}
+          disabled={indiceZoom <= 0}
+        >
+          <span className="text-sm font-bold leading-none">A−</span>
+        </Button>
+        <Button
+          variante="ghost"
+          onClick={() => ajustarZoom(1)}
+          aria-label="Aumentar zoom"
+          title={`Aumentar zoom (atual: ${Math.round(zoom * 100)}%)`}
+          disabled={indiceZoom >= NIVEIS_ZOOM.length - 1}
+        >
+          <span className="text-sm font-bold leading-none">A+</span>
         </Button>
         <Button
           variante="ghost"

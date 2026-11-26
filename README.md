@@ -51,6 +51,14 @@ npm run dev      # http://localhost:5173
 
 Os dados ficam em `localStorage` (sem backend). O tema claro/escuro também é persistido.
 
+## PWA (instalável + offline)
+
+O app é um **PWA**: após a primeira visita o service worker cacheia tudo e funciona **offline**. No celular, o navegador oferece **"Adicionar à tela inicial"**; no desktop (Chrome/Edge), o ícone de instalar na barra de endereços. O cache atualiza sozinho (`autoUpdate`) — recarregue a página após um deploy novo se algo parecer desatualizado.
+
+**Zoom de acessibilidade**: botões **A−** e **A+** na barra superior alteram o zoom (90%–150%) e ficam salvos por dispositivo (`festival-zoom`).
+
+**Compartilhar**: o botão 🔗 abre o compartilhamento nativo do sistema (WhatsApp etc.) quando disponível; caso contrário copia o link com todos os dados embutidos.
+
 ## Formato dos CSVs
 
 ### Entrada (atletas) — `/carregar`
@@ -183,7 +191,7 @@ A documentação oficial do projeto segue o kit replicável na raiz:
 ## Troubleshooting
 
 - **Botão de impressão não mostra nada** — verifique se `Sidebar`/`TopBar` estão com classe `no-print` e a área de impressão com `print-area` (CSS em `src/index.css`).
-- **Dados sumiram** — tudo fica em `localStorage` (`festival-storage` + `festival-tema`); limpar dados do navegador apaga o estado.
+- **Dados sumiram** — tudo fica em `localStorage` (`festival-storage` + `festival-tema` + `festival-zoom`); limpar dados do navegador apaga o estado.
 - **CSV rejeitado** — confira o cabeçalho exato (`nome,idade,categoria,genero,horario,professor,nivel,tempo`), o gênero (`feminino|masculino`) e o horário (`manhã|tarde|HH:MM`). Erros linha a linha aparecem no preview.
 
 ## Licença

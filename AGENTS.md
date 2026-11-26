@@ -97,6 +97,9 @@ Regras:
 - **Contraste de séries na UI**: `classeLinhaSerie(indice, primeira)` exportada de `TabelaGenerica` — tinta alternada por **índice no array** (não por `numero`, por causa das lacunas de numeração), `border-b` fino + `border-t-2 border-t-primary-300` na **primeira linha de cada série**; a prop `classeLinha(item)` do `TabelaGenerica` substitui as classes padrão da `<tr>` (autocontida, sem conflito). `BalizamentoPage`/`ControlePage` adicionam `indiceSerie`/`primeira` às linhas e `LinhaSorteavel` recebe a mesma classe; **área de impressão intocada**.
 - **Numeração contígua + saneamento de dados legados**: invariante — `series` e `seriesPorFiltro` ficam sempre numeradas **1..n**. `renumerarSeries(series)` (em `edicaoSeries.ts`) fecha lacunas nas mutações que podem esvaziar série (`reordenarSeries`, `removerAtletaDaSerie`, `preservarSeries`; retorna o **mesmo array** se já contíguo). `sanearSeries(series)` (série >4 → corta para os 4 primeiros + `reatribuirRaias` + renumera; dado válido → mesma referência) roda no **`merge` do persist** (séries e snapshots) e no **`importarCompartilhado`** — é o que **repara sozinho séries corrompidas criadas antes do teto de 4** (sintoma: balizas duplicadas *dentro da mesma série* vindas do `localStorage`; o excedente permanece na base e volta em "Atualizar"). As utils puras (`moverAtleta`, `remapearPorNome`, `inserirAusentes`) **não** renumeram — a invariante é da store.
 - **Export `.xlsx` + auto-sync do histórico**: `exportXlsx(nome, campos, linhas)` em `src/utils/xlsx.ts` (SheetJS `xlsx`, **import dinâmico** — chunk separado no build, só carrega no clique) espelha a assinatura de `exportCSV`; usada só na Balizamento (`balizamento.xlsx`) e Controle (`controle-resultados.xlsx`). **`atualizarTempoAtleta` faz upsert em `historico`** com `ano = new Date().getFullYear()` (hoje 2026) casando por `nomeChave()` (trim+lowercase) — mesmo aluno+ano **substitui**, senão append; **`tempo === undefined` não mexe** no histórico (não apaga linha vinda de CSV — o input limpa durante a digitação); escopo é só a base **Festival** (edição de tempo na Lista via `atualizarAtleta` **não** sincroniza). Na Análise, `anos` = anos do histórico **∪ ano atual** (chip e coluna 2026 sempre existem, células vazias com "—") e o label "edição(ões)" usa `anosComDados` (só anos com registros).
+- **Link compartilhado payload v2 + retrocompat v1**: `serializarEstado` grava `v: 2` — séries com atletas **por id** (`{atletaId, raia}`) e atletas **sem** `medalha`/`categoriaCalculada` (recalculados na importação: `calcularMedalha`, `categoriaPorIdade`); `desserializarCompartilhado` aceita `v: 1` (forma antiga embutida) e `v: 2`; referência a id ausente é descartada. `importarLinkNoBoot` em `main.tsx` tem `try/catch/finally` — o React **sempre** monta (o bug da "sidebar sumiu" era exceção no boot antes do `createRoot`); `importarCompartilhado` força `sidebarAberta: true`. Share: `navigator.share()` quando existe (mobile/WhatsApp), fallback copy.
+- **Zoom de acessibilidade**: `src/utils/zoom.ts` — `NIVEIS_ZOOM = [0.9, 1.0, 1.1, 1.25, 1.5]`, `zoomVizinho(atual, direcao)` com clamp, `aplicarZoom` seta `document.documentElement.style.zoom` (escala px+rem), persistido em `localStorage` **`festival-zoom`** (aplicado em `main.tsx` antes do render, anti-flash). Botões **A−/A+** na TopBar (`disabled` nas extremidades via `disabled:opacity-40 disabled:pointer-events-none` no Button ghost).
+- **PWA**: `vite-plugin-pwa` (Workbox) no `vite.config.ts` — `registerType: 'autoUpdate'`, `injectRegister: 'auto'` (sem import no main.tsx), manifest standalone/`#2563eb`, `navigateFallback: 'index.html'`, precache de `**/*.{js,css,html,ico,png,svg,webmanifest}`. Ícones PNG gerados via PowerShell `System.Drawing` em `public/` (192, 512, maskable, apple-touch 180). **`public/_headers`**: `Cache-Control: no-cache` em `/sw.js` e `/manifest.webmanifest` (Cloudflare Pages). Cuidado no PowerShell: **`$path` é variável automática** — nunca usá-la como nome de variável local (colide com parâmetro `-Path` e quebra `GraphicsPath`).
 
 ---
 
@@ -983,6 +986,48 @@ pm run build OK
 - src/utils/edicaoSeries.ts
 - src/pages/BalizamentoPage.tsx
 - src/utils/edicaoSeries.test.ts
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 25/11/2026 — PWA + zoom acessibilidade + link compartilhado otimizado (v2.0.0)
+
+### O que foi feito
+- **Link compartilhado — sidebar sumia ao abrir**: `importarLinkNoBoot()` (`main.tsx`) envolvido em `try/catch/finally` — exceção no boot (antes do `createRoot`) derrubava a página inteira; agora o React **sempre** monta e o `history.replaceState` roda no `finally`; `importarCompartilhado` força `sidebarAberta: true` (destinatário sempre vê o menu)
+- **Link muito menor (payload `v: 2`)**: `compartilhar.ts` serializa séries com atletas **por id** (elimina duplicação dos objetos embutidos) e stripa `medalha`/`categoriaCalculada` (recalculados na importação); `desserializarCompartilhado` aceita `v: 1` (retrocompat) e `v: 2`; referência a id inexistente é descartada; teste comprova payload v2 < v1 antigo
+- **Share nativo**: botão 🔗 usa `navigator.share()` quando disponível (mobile/WhatsApp), fallback copy
+- **Zoom de acessibilidade**: `src/utils/zoom.ts` (`NIVEIS_ZOOM` 0.9/1.0/1.1/1.25/1.5, clamp, CSS `zoom` no `<html>`, chave `festival-zoom`); botões **A−/A+** na TopBar com `disabled` nas extremidades; aplicado em `main.tsx` anti-flash; Button ghost ganhou `disabled:opacity-40 disabled:pointer-events-none`
+- **PWA**: `vite-plugin-pwa` (Workbox) — manifest standalone `#2563eb`, `registerType: 'autoUpdate'`, `injectRegister: 'auto'`, `navigateFallback: 'index.html'`, precache 54 entradas; ícones PNG gerados via PowerShell `System.Drawing` (192, 512, maskable, apple-touch 180) em `public/`; `public/_headers` (no-cache em `/sw.js` e `/manifest.webmanifest`); meta description + apple-touch-icon no `index.html`
+- Testes: `compartilhar.test.ts` reescrito (11: roundtrip v2, v1 retrocompat, v2<v1, recálculo, id fantasma, validação) + `zoom.test.ts` (8) + store (sidebar) — **142 testes, 0 falhas**; `tsc -b --force` 0 erros; `npm run build` OK (PWA gerado)
+- Docs: CHANGELOG (Added/Changed/Fixed), AGENTS.md (Contexto Crítico + esta sessão)
+
+### Decisões
+- **Ordem**: compartilhar (bug) → zoom → PWA por último (SW cacheia o build e atrapalaria testes anteriores)
+- **Commit único `feat!:`** para o hook gerar **MAJOR → v2.0.0** de uma vez (pedido do usuário: versionamento major)
+- Zoom via CSS `zoom` no documentElement (escala px e rem, suportado em todos os browsers modernos) em vez de root font-size (só rem)
+- PWA com `autoUpdate` (sem botão "atualizar app"); `injectRegister: 'auto'` (sem mexer no main.tsx)
+- PowerShell dos ícones: renomear `$path` → `$clip`/`$OutFile` (variável automática `$path` colidia com o parâmetro)
+
+### Arquivos
+- src/main.tsx
+- src/utils/compartilhar.ts
+- src/utils/compartilhar.test.ts
+- src/utils/zoom.ts (novo)
+- src/utils/zoom.test.ts (novo)
+- src/components/layout/TopBar.tsx
+- src/components/ui/Button.tsx
+- src/store/useAppStore.ts
+- src/store/useAppStore.test.ts
+- vite.config.ts
+- index.html
+- public/_headers (novo)
+- public/icon-192.png, icon-512.png, icon-maskable.png, apple-touch-icon.png (novos)
+- package.json (+vite-plugin-pwa)
 - CHANGELOG.md
 - AGENTS.md
 

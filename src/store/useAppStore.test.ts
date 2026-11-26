@@ -348,6 +348,21 @@ describe('reparo e numeração contígua', () => {
     expect(estado.edicoesManuais).toBe(true);
   });
 
+  it('importarCompartilhado força a sidebar aberta', () => {
+    useAppStore.setState({ sidebarAberta: false });
+
+    useAppStore.getState().importarCompartilhado({
+      atletas: [],
+      atletasApresentacao: [],
+      series: [],
+      periodo: 'geral',
+      generoBalizamento: 'todos',
+      historico: [],
+    });
+
+    expect(useAppStore.getState().sidebarAberta).toBe(true);
+  });
+
   it('repara dados antigos na abertura (merge do persist)', async () => {
     const cinco = [atleta(), atleta(), atleta(), atleta(), atleta()];
     const base = serie(1, cinco.slice(0, 4));

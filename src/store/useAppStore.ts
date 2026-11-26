@@ -169,6 +169,7 @@ export const useAppStore = create<AppState>()(
           periodo: dados.periodo,
           generoBalizamento: dados.generoBalizamento,
           historico: dados.historico,
+          sidebarAberta: true,
         }),
 
       limparAtletas: (destino = 'festival') =>

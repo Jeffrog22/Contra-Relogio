@@ -9,7 +9,7 @@ const VARIANTES: Record<Variante, string> = {
     'border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors px-4 py-2 text-sm text-gray-700 dark:text-gray-300',
   danger:
     'bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors px-5 py-2 text-sm font-bold',
-  ghost: 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors',
+  ghost: 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:pointer-events-none',
 };
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
