@@ -1135,3 +1135,31 @@ pm run build OK
 ### Typecheck
 - Frontend: 0 erros
 - Backend: 0 erros
+
+---
+
+## Sessão: 26/11/2026 — Fix: gap interno do modal do cronômetro + 0,5cm/lado de largura (v2.1.2)
+
+### O que foi feito
+- **Diagnóstico** (relato: "gap de 0,5cm do topo mesmo com as correções" + "+0,5 pra esquerda e +0,5 pra direita" = tamanho do modal; testado no **PWA instalado no celular**): eram **dois gaps** — (1) faixa acima do modal (escolhido testar cache e aceitar se persistir; se for status bar do Android com `theme-color`, conteúdo web não pinta por cima em standalone) e (2) ~24px (`pt-6`) de espaço em branco **dentro** do modal entre a borda superior e o relógio
+- **`CronometroSerie.tsx`**: header `pt-[calc(1.5rem+env(...))]` → **`pt-[calc(0.5rem+env(...))]`** (24px → 8px; `env()` mantido p/ notch/edge-to-edge); handle reposicionado **`top-1.5` → `top-0.5`** (não invadir a caixa do relógio com o padding menor); modal **`max-w-lg` (512px) → `max-w-[550px]`** (+19px/lado ≈ 0,5cm exatos no desktop) e **`mx-3` removido** (no celular `<550px` o modal vai colado às bordas, ganhando o máximo possível ~0,32cm/lado)
+- **`public/_headers`**: `Cache-Control: no-cache` em **`/`** e **`/index.html`** (Cloudflare Pages) — evita HTML velho no cache/service worker; complementa o `no-cache` já existente em `/sw.js` e `/manifest.webmanifest`
+- Verificação: `npx tsc -b --force` 0 erros; **144 testes, 0 falhas**; `npm run build` OK (PWA 61 entradas) + sanity no `dist/`: `viewport-fit=cover` no HTML, `max-width:550px` e `safe-area-inset-top` no CSS
+- Docs: CHANGELOG (Fixed), AGENTS.md (esta sessão)
+
+### Decisões
+- **Faixa acima do modal**: usuário optou por **testar cache e aceitar** — após deploy, fechar o PWA de vez (limpar recentes) e reabrir; se persistir, é a status bar do Android (faixa em branco/azul sem ícones) e fica aceita (alternativa futura seria `manifest.display: 'fullscreen'`, que esconde a status bar — não implementada)
+- Gap interno resolvido reduzindo o `pt` do header (não `env()`) — `env()` segue compensando notch quando o viewport é edge-to-edge
+- Largura: `max-w-[550px]` escolhido para dar exatamente +0,5cm por lado (512 + 2×19px); margem lateral zerada no celular em vez de negativa (não sai da tela)
+- Handle mantido (é decorativo; o modal não arrasta) e reposicionado no lugar do padding removido
+- Commit único `fix:` → patch (**v2.1.2**)
+
+### Arquivos
+- src/components/ui/CronometroSerie.tsx
+- public/_headers
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
