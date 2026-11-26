@@ -304,7 +304,7 @@ export function CronometroSerie({ serie, onFechar }: Props) {
     >
       <div
         ref={modalRef}
-        className="relative w-full max-w-lg mx-4 bg-white dark:bg-gray-800 rounded-b-lg shadow-xl dark:shadow-black/20 max-h-[90vh] flex flex-col select-none"
+        className="relative w-full max-w-lg mx-3 bg-white dark:bg-gray-800 rounded-b-lg shadow-xl dark:shadow-black/20 max-h-[90vh] flex flex-col select-none"
         style={{ WebkitTouchCallout: 'none' }}
         onClick={(evento) => evento.stopPropagation()}
         onContextMenu={(evento) => evento.preventDefault()}
@@ -337,7 +337,7 @@ export function CronometroSerie({ serie, onFechar }: Props) {
         </button>
 
         <DndContext sensors={sensors} onDragEnd={aoTerparAraste}>
-          <header className="relative shrink-0 px-4 pt-6 pb-3 border-b border-gray-200 dark:border-gray-700">
+          <header className="relative shrink-0 px-4 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-3 border-b border-gray-200 dark:border-gray-700">
             <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
 
             <div className="flex justify-center">

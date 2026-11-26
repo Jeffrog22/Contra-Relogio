@@ -97,7 +97,7 @@ export function TopBar() {
   const indiceZoom = (NIVEIS_ZOOM as readonly number[]).indexOf(zoom);
 
   return (
-    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-[57px] flex items-center justify-between px-4 no-print">
+    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-[calc(57px+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] flex items-center justify-between px-4 no-print">
       <div className="flex items-center gap-2 min-w-0">
         <Button
           variante="ghost"

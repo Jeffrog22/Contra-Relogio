@@ -1103,3 +1103,35 @@ pm run build OK
 ### Typecheck
 - Frontend: 0 erros
 - Backend: 0 erros
+
+---
+
+## Sessão: 26/11/2026 — Fix: modal do cronometro na borda superior + 4px mais largo
+
+### O que foi feito
+- **Diagnóstico** (relato: "modal mais próximo da borda acima" com gap visível): o código já usava `fixed inset-0` + `items-start` (y=0 do viewport) sem `mt`/`pt` — a causa era **safe-area**: o viewport não ia até a borda física do dispositivo (status bar/notch acima do `inset-0`), então o modal encostava no topo do *layout*, não da *tela*
+- **`index.html`**: meta viewport ganhou **`viewport-fit=cover`** — `inset-0` passa a alcançar a borda física
+- **`CronometroSerie.tsx`**: header do modal `pt-6` → **`pt-[calc(1.5rem+env(safe-area-inset-top))]`** (handle/relógio não ficam sob o notch); modal **`mx-4` → `mx-3`** (+4px de largura por lado)
+- **`TopBar.tsx`** (colateral do viewport-fit): altura `h-[57px]` → **`h-[calc(57px+env(safe-area-inset-top))]`** + `pt-[env(safe-area-inset-top)]`
+- **`Layout.tsx` / `Sidebar.tsx`**: `min-h-[calc(100vh-57px)]` → **`min-h-[calc(100vh-57px-env(safe-area-inset-top))]`** (casar com a nova altura do TopBar)
+- Verificação: **144 testes, 0 falhas**; `npx tsc -b --force` 0 erros; `npm run build` OK
+- Docs: CHANGELOG (Fixed), AGENTS.md (esta sessão)
+
+### Decisões
+- **`viewport-fit=cover` + `env()`** em vez de só empurrar o modal com margem negativa — resolve a borda física para o app inteiro (TopBar/Sidebar incluídos)
+- Compensação de safe-area via **Tailwind arbitrary values** com `env()` (sem CSS extra)
+- Desktop inalterado: `env(safe-area-inset-top)` = 0 fora de dispositivos com notch
+- Commit único `fix:` → patch (**v2.1.1**)
+
+### Arquivos
+- index.html
+- src/components/ui/CronometroSerie.tsx
+- src/components/layout/TopBar.tsx
+- src/components/layout/Layout.tsx
+- src/components/layout/Sidebar.tsx
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros

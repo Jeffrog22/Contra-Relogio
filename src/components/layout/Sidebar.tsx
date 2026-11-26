@@ -58,7 +58,7 @@ export function Sidebar() {
         />
       )}
       <aside
-        className={`no-print bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-r dark:border-gray-800 min-h-[calc(100vh-57px)] flex flex-col py-4 transition-all duration-300 ease-in-out overflow-hidden max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 ${
+        className={`no-print bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-r dark:border-gray-800 min-h-[calc(100vh-57px-env(safe-area-inset-top))] flex flex-col py-4 transition-all duration-300 ease-in-out overflow-hidden max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 ${
           aberta ? 'w-56 translate-x-0' : 'w-14 max-md:-translate-x-full'
         }`}
       >

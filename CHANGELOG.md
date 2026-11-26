@@ -6,6 +6,10 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
+### Fixed
+- **Modal do cronômetro colado na borda superior do dispositivo**: mesmo com `items-start`, ainda havia gap visível no topo em PWA/celular — o viewport não alcançava a borda física (status bar/notch). Agora: `viewport-fit=cover` no `index.html` (overlay com `inset-0` vai até a borda real) + compensação `env(safe-area-inset-top)` no header do modal (`pt-6` → `pt-[calc(1.5rem+env(...))]`) e no TopBar (altura `57px + env(...)` + `pt`), e `min-h` de Layout/Sidebar ajustados; desktop inalterado (`env = 0`)
+- **Modal do cronômetro 4px mais largo em cada lado**: `mx-4` → `mx-3` (16px → 12px de margem lateral)
+
 ### Changed
 - **Link compartilhado muito menor (~74% de redução)**: compressão trocada de lz-string por **`CompressionStream('deflate-raw')` + base64url** (nativa dos browsers) e **ids curtos no payload** (UUIDs de 36 chars → `"0"`, `"1"`, … — os UUIDs eram dados incompressíveis que inflavam o link); na escala do link real (79+25 atletas, 99 histórico), 9.615 → 2.543 chars; **desserialização com fallback lz-string** — links v1/v2 antigos continuam abrindo; API agora assíncrona (`serializarEstado`/`montarLink`/`desserializarCompartilhado`), boot em `main.tsx` usa `.finally(createRoot)` (React sempre monta)
 - Testes: `compartilhar.test.ts` reescrito (13: roundtrip deflate+ids curtos, caracteres URL-safe, prefixo opcional, recálculo de derivados, ids curtos, **payload novo < lz antigo (60%)**, fixtures legadas v1 e v2 em lz-string, id fantasma, validação e limite) — 144 no total
