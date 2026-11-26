@@ -14,11 +14,11 @@ if (temaSalvo === 'dark') {
 
 aplicarZoom(lerZoomSalvo());
 
-function importarLinkNoBoot() {
+async function importarLinkNoBoot() {
   if (!window.location.hash.startsWith(PREFIXO_HASH)) return;
   try {
     const store = useAppStore.getState();
-    const dados = desserializarCompartilhado(window.location.hash);
+    const dados = await desserializarCompartilhado(window.location.hash);
     if (dados) {
       store.importarCompartilhado(dados);
       store.mostrarToast(
@@ -39,12 +39,12 @@ function importarLinkNoBoot() {
   }
 }
 
-importarLinkNoBoot();
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>,
-);
+importarLinkNoBoot().finally(() => {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </React.StrictMode>,
+  );
+});

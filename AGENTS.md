@@ -101,6 +101,7 @@ Regras:
 - **Zoom de acessibilidade**: `src/utils/zoom.ts` — `NIVEIS_ZOOM = [0.9, 1.0, 1.1, 1.25, 1.5]`, `zoomVizinho(atual, direcao)` com clamp, `aplicarZoom` seta `document.documentElement.style.zoom` (escala px+rem), persistido em `localStorage` **`festival-zoom`** (aplicado em `main.tsx` antes do render, anti-flash). Botões **A−/A+** na TopBar (`disabled` nas extremidades via `disabled:opacity-40 disabled:pointer-events-none` no Button ghost).
 - **PWA**: `vite-plugin-pwa` (Workbox) no `vite.config.ts` — `registerType: 'autoUpdate'`, `injectRegister: 'auto'` (sem import no main.tsx), manifest standalone/`#2563eb`, `navigateFallback: 'index.html'`, precache de `**/*.{js,css,html,ico,png,svg,webmanifest}`. Ícones PNG gerados via PowerShell `System.Drawing` em `public/` (192, 512, maskable, apple-touch 180). **`public/_headers`**: `Cache-Control: no-cache` em `/sw.js` e `/manifest.webmanifest` (Cloudflare Pages). Cuidado no PowerShell: **`$path` é variável automática** — nunca usá-la como nome de variável local (colide com parâmetro `-Path` e quebra `GraphicsPath`).
 - **Layout mobile = drawer**: causa raiz do "menu some no mobile" era **falta de responsividade** (flex fixo + sem `min-w-0` + TopBar sem truncate → scroll horizontal empurrava a sidebar para fora em retrato; paisagem >768px funcionava). Solução: `overflow-x-clip` no flex do `Layout` + `min-w-0` no main; **`< 768px` a sidebar é drawer** (`max-md:fixed` + `translate-x` off-screen quando fechada, backdrop `z-30 md:hidden`, fecha no `useEffect` de `location.pathname`); **☰** no TopBar (`md:hidden`) alterna o mesmo `sidebarAberta`; `≥ 768px` = w-56/w-14 estático como antes. `importarCompartilhado` só força `sidebarAberta: true` em desktop (`matchMedia('(min-width: 768px)')`; **fallback `true` sem `matchMedia`** preserva testes jsdom) — mobile abre o drawer fechado.
+- **Link compartilhado deflate + ids curtos (API assíncrona)**: `serializarEstado`/`montarLink`/`desserializarCompartilhado` viraram **`Promise`** — compressão com `CompressionStream('deflate-raw')` + base64url (nativa, ~74% menor que lz-string na mesma base) e **ids remapeados para `"0"`,`"1"`,…** no payload (UUIDs de 36 chars eram incompressíveis); desserialização **tenta deflate e cai para lz-string** (`interpretarJson` valida shape p/ cada tentativa — deflate pode "sucessar" com lixo em dados lz); `main.tsx` roda `importarLinkNoBoot().finally(createRoot)` (React sempre monta). **lz-string continua como dependência** (só de decompressão p/ links antigos).
 
 ---
 
@@ -1060,6 +1061,42 @@ pm run build OK
 - src/components/layout/Sidebar.tsx
 - src/components/layout/TopBar.tsx
 - src/store/useAppStore.ts
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 26/11/2026 — Link compartilhado com deflate e ids curtos (v2.1.0)
+
+### O que foi feito
+- **Diagnóstico** (relato: "link ainda grande" — o link real do usuário media **16.214 chars**): payload v2 válido (79+25 atletas, 99 histórico, 7 séries) = JSON 35,7 KB comprimido p/ 16,2 KB com lz-string; dois defeitos: **lz-string é fraco p/ JSON** e **UUIDs de 36 chars são incompressíveis** (~4,7 KB do payload)
+- **`src/utils/compartilhar.ts` reescrito (API assíncrona)**:
+  - **Compressão**: `CompressionStream('deflate-raw')` + base64url (nativa, sem dependência) no lugar de `lz-string` na serialização
+  - **Ids curtos**: `mapearIds()` remapeia UUIDs → `"0"`, `"1"`, … no payload; séries referenciam os mesmos ids curtos; na importação os ids curtos ficam no store (opacos — o app não depende do formato do UUID)
+  - **Desserialização com fallback**: tenta deflate primeiro (`interpretarJson` valida shape) → se falhar, lz-string (**links v1/v2 antigos continuam abrindo**, inclusive o de 16 KB do usuário); lz-string virou só dependência de decompressão
+  - Payload segue `v: 1 | 2` — sem versão nova
+- **`src/main.tsx`**: `importarLinkNoBoot()` async; `createRoot` no `.finally()` — React **sempre** monta (garantia preservada)
+- **`TopBar.tsx`**: `await montarLink(...)`
+- **Resultado medido** (escala do link real: 79+25 atletas UUID + 99 histórico): **9.615 → 2.543 chars = −74%**
+- Testes: `compartilhar.test.ts` reescrito — 13 testes (roundtrip deflate+ids curtos, URL-safe, prefixo opcional, recálculo de derivados, **ids curtos sem UUID**, **payload novo < lz antigo em 60%**, fixture legada v1 lz, fixture legada v2 lz com UUID, id fantasma, validação/limite) — **144 testes, 0 falhas**; `tsc -b --force` 0 erros; `npm run build` OK
+- Docs: CHANGELOG (Changed), AGENTS.md (Contexto Crítico + esta sessão)
+
+### Decisões
+- **deflate-raw + base64url** em vez de gzip/zlib (sem header extra — menor) e em vez de manter lz-string (fraco p/ JSON repetitivo)
+- **Ids curtos sem mapear de volta** — o destinatário recebe ids `"0"`,`"1"` no store; é opaco e economiza ~4,5 KB de dados incompressíveis
+- **Fallback lz-string** mantido só na desserialização (links compartilhados antes desta versão continuam válidos)
+- **API assíncrona** (CompressionStream é async): boot com `.finally(createRoot)` para a página nunca ficar em branco
+- Ordem dos commits: drawer primeiro (fix/patch), link depois (feat/minor) — escolha do usuário
+
+### Arquivos
+- src/utils/compartilhar.ts
+- src/utils/compartilhar.test.ts
+- src/main.tsx
+- src/components/layout/TopBar.tsx
 - CHANGELOG.md
 - AGENTS.md
 

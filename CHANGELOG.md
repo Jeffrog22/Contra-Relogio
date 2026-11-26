@@ -6,6 +6,10 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
+### Changed
+- **Link compartilhado muito menor (~74% de redução)**: compressão trocada de lz-string por **`CompressionStream('deflate-raw')` + base64url** (nativa dos browsers) e **ids curtos no payload** (UUIDs de 36 chars → `"0"`, `"1"`, … — os UUIDs eram dados incompressíveis que inflavam o link); na escala do link real (79+25 atletas, 99 histórico), 9.615 → 2.543 chars; **desserialização com fallback lz-string** — links v1/v2 antigos continuam abrindo; API agora assíncrona (`serializarEstado`/`montarLink`/`desserializarCompartilhado`), boot em `main.tsx` usa `.finally(createRoot)` (React sempre monta)
+- Testes: `compartilhar.test.ts` reescrito (13: roundtrip deflate+ids curtos, caracteres URL-safe, prefixo opcional, recálculo de derivados, ids curtos, **payload novo < lz antigo (60%)**, fixtures legadas v1 e v2 em lz-string, id fantasma, validação e limite) — 144 no total
+
 ### Fixed
 - **Menu lateral some no mobile (PWA instalado, retrato)**: o layout não tinha tratamento responsivo — em ~375px o conteúdo (título + tabelas) forçava scroll horizontal e a sidebar saía da tela (por isso "aparecia" na paisagem e sumia ao navegar). Agora: `<main>` com `min-w-0`, flex com `overflow-x-clip` (mata o scroll lateral); **em telas < 768px a sidebar vira drawer** (`fixed` + `translate-x`, backdrop que fecha ao toque, fecha ao navegar); TopBar ganhou **☰** (`md:hidden`) que abre o drawer; título com `truncate`; desktop ≥ 768px mantém o comportamento anterior intacto
 - **Link compartilhado no mobile não abre mais o drawer por cima do conteúdo**: `importarCompartilhado` força `sidebarAberta: true` só em desktop (`matchMedia`, fallback `true` sem `matchMedia` p/ jsdom) — no mobile o drawer começa fechado e o destinatário vê o conteúdo + toast

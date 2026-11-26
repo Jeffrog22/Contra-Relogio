@@ -51,7 +51,7 @@ export function TopBar() {
     }
 
     const base = `${window.location.origin}${window.location.pathname}${window.location.search}`;
-    const link = montarLink(base, {
+    const link = await montarLink(base, {
       atletas: estado.atletas,
       atletasApresentacao: estado.atletasApresentacao,
       series: estado.series,
