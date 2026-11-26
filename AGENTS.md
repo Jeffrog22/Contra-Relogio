@@ -100,6 +100,7 @@ Regras:
 - **Link compartilhado payload v2 + retrocompat v1**: `serializarEstado` grava `v: 2` — séries com atletas **por id** (`{atletaId, raia}`) e atletas **sem** `medalha`/`categoriaCalculada` (recalculados na importação: `calcularMedalha`, `categoriaPorIdade`); `desserializarCompartilhado` aceita `v: 1` (forma antiga embutida) e `v: 2`; referência a id ausente é descartada. `importarLinkNoBoot` em `main.tsx` tem `try/catch/finally` — o React **sempre** monta (o bug da "sidebar sumiu" era exceção no boot antes do `createRoot`); `importarCompartilhado` força `sidebarAberta: true`. Share: `navigator.share()` quando existe (mobile/WhatsApp), fallback copy.
 - **Zoom de acessibilidade**: `src/utils/zoom.ts` — `NIVEIS_ZOOM = [0.9, 1.0, 1.1, 1.25, 1.5]`, `zoomVizinho(atual, direcao)` com clamp, `aplicarZoom` seta `document.documentElement.style.zoom` (escala px+rem), persistido em `localStorage` **`festival-zoom`** (aplicado em `main.tsx` antes do render, anti-flash). Botões **A−/A+** na TopBar (`disabled` nas extremidades via `disabled:opacity-40 disabled:pointer-events-none` no Button ghost).
 - **PWA**: `vite-plugin-pwa` (Workbox) no `vite.config.ts` — `registerType: 'autoUpdate'`, `injectRegister: 'auto'` (sem import no main.tsx), manifest standalone/`#2563eb`, `navigateFallback: 'index.html'`, precache de `**/*.{js,css,html,ico,png,svg,webmanifest}`. Ícones PNG gerados via PowerShell `System.Drawing` em `public/` (192, 512, maskable, apple-touch 180). **`public/_headers`**: `Cache-Control: no-cache` em `/sw.js` e `/manifest.webmanifest` (Cloudflare Pages). Cuidado no PowerShell: **`$path` é variável automática** — nunca usá-la como nome de variável local (colide com parâmetro `-Path` e quebra `GraphicsPath`).
+- **Layout mobile = drawer**: causa raiz do "menu some no mobile" era **falta de responsividade** (flex fixo + sem `min-w-0` + TopBar sem truncate → scroll horizontal empurrava a sidebar para fora em retrato; paisagem >768px funcionava). Solução: `overflow-x-clip` no flex do `Layout` + `min-w-0` no main; **`< 768px` a sidebar é drawer** (`max-md:fixed` + `translate-x` off-screen quando fechada, backdrop `z-30 md:hidden`, fecha no `useEffect` de `location.pathname`); **☰** no TopBar (`md:hidden`) alterna o mesmo `sidebarAberta`; `≥ 768px` = w-56/w-14 estático como antes. `importarCompartilhado` só força `sidebarAberta: true` em desktop (`matchMedia('(min-width: 768px)')`; **fallback `true` sem `matchMedia`** preserva testes jsdom) — mobile abre o drawer fechado.
 
 ---
 
@@ -1028,6 +1029,37 @@ pm run build OK
 - public/_headers (novo)
 - public/icon-192.png, icon-512.png, icon-maskable.png, apple-touch-icon.png (novos)
 - package.json (+vite-plugin-pwa)
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 26/11/2026 — Fix: menu lateral some no mobile (drawer responsivo)
+
+### O que foi feito
+- **Diagnóstico** (relato: menu aparecia na paisagem, sumia/suprimia em retrato, sumia ao clicar em Balizamento, PWA instalado): causa raiz = **falta de responsividade** — `flex` fixo sem `min-w-0`, TopBar sem `truncate`, sidebar sempre no fluxo; em ~375px o conteúdo empurrava scroll horizontal e a sidebar saía da tela; paisagem (~844px ≥ 768px) não transbordava
+- **`Layout.tsx`**: `min-w-0` no `<main>` + `overflow-x-clip` no flex (mata o scroll lateral)
+- **`Sidebar.tsx`**: **`< 768px` vira drawer** — `max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40` com `max-md:-translate-x-full` quando fechada; backdrop `fixed inset-0 bg-black/40 z-30 md:hidden` fecha ao toque; `useEffect` em `location.pathname` fecha o drawer ao navegar (só quando `ehMobile()` via `matchMedia`); **`≥ 768px` = w-56/w-14 estático inalterado** (sem backdrop/translate)
+- **`TopBar.tsx`**: botão **☰** (`md:hidden`) no início do header que alterna o mesmo `sidebarAberta`; título ganhou wrapper `min-w-0` + `truncate`; grupo de botões `shrink-0`
+- **`useAppStore.ts`**: `importarCompartilhado` força `sidebarAberta: true` **só em desktop** (`matchMedia('(min-width: 768px)')`); **fallback `true` quando não há `matchMedia`** (jsdom dos testes preserva o comportamento); mobile fica com o drawer fechado (conteúdo limpo + toast)
+- Verificação: **142 testes, 0 falhas**; `npx tsc -b --force` 0 erros; `npm run build` OK (PWA regenerado)
+- Docs: CHANGELOG (Fixed), AGENTS.md (Contexto Crítico: Layout mobile = drawer + esta sessão)
+
+### Decisões
+- Drawer **< 768px** (Tailwind `md`) — landscape de celular cai no desktop estático (já funcionava); retrato de celular e tablets pequenos usam drawer
+- Fecha ao navegar via `useEffect` no `location.pathname` (não em cada NavLink — cobre rotas novas automaticamente)
+- `importarCompartilhado` não abre o drawer no mobile (evita gaveta por cima do conteúdo logo após importar o link)
+- **2 commits** nesta entrega: este `fix:` (patch) + `feat:` do link deflate (minor) — escolha do usuário
+
+### Arquivos
+- src/components/layout/Layout.tsx
+- src/components/layout/Sidebar.tsx
+- src/components/layout/TopBar.tsx
+- src/store/useAppStore.ts
 - CHANGELOG.md
 - AGENTS.md
 

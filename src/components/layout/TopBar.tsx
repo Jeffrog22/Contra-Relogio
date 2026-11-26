@@ -36,6 +36,7 @@ export function TopBar() {
   const tema = useAppStore((estado) => estado.tema);
   const alternarTema = useAppStore((estado) => estado.alternarTema);
   const mostrarToast = useAppStore((estado) => estado.mostrarToast);
+  const alternarSidebar = useAppStore((estado) => estado.alternarSidebar);
   const [zoom, setZoom] = useState<ZoomNivel>(() => lerZoomSalvo());
 
   async function compartilhar() {
@@ -97,13 +98,24 @@ export function TopBar() {
 
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-[57px] flex items-center justify-between px-4 no-print">
-      <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
-        Festival de Natação Contra Relógio
-        <span className="ml-2 align-middle text-[10px] font-normal text-gray-400 dark:text-gray-500">
-          v{__APP_VERSION__}
+      <div className="flex items-center gap-2 min-w-0">
+        <Button
+          variante="ghost"
+          className="md:hidden shrink-0"
+          onClick={alternarSidebar}
+          aria-label="Abrir menu de navegação"
+          title="Menu"
+        >
+          <span className="text-lg leading-none">☰</span>
+        </Button>
+        <span className="text-lg font-bold text-primary-600 dark:text-primary-400 truncate">
+          Festival de Natação Contra Relógio
+          <span className="ml-2 align-middle text-[10px] font-normal text-gray-400 dark:text-gray-500">
+            v{__APP_VERSION__}
+          </span>
         </span>
-      </span>
-      <div className="flex items-center gap-1">
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
         <Button
           variante="ghost"
           onClick={compartilhar}

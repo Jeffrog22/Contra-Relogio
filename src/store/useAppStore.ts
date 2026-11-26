@@ -159,7 +159,14 @@ export const useAppStore = create<AppState>()(
 
       processarApresentacao: (atletas) => set({ atletasApresentacao: atletas }),
 
-      importarCompartilhado: (dados) =>
+      importarCompartilhado: (dados) => {
+        // Desktop: força o menu visível (destinatário enxerga a navegação).
+        // Mobile: deixa o drawer fechado — o conteúdo abre limpo com o toast.
+        // Fallback true sem matchMedia (ex.: jsdom nos testes) preserva o comportamento antigo.
+        const ehDesktop =
+          typeof window === 'undefined' || typeof window.matchMedia !== 'function'
+            ? true
+            : window.matchMedia('(min-width: 768px)').matches;
         set({
           atletas: dados.atletas,
           atletasApresentacao: dados.atletasApresentacao,
@@ -169,8 +176,9 @@ export const useAppStore = create<AppState>()(
           periodo: dados.periodo,
           generoBalizamento: dados.generoBalizamento,
           historico: dados.historico,
-          sidebarAberta: true,
-        }),
+          ...(ehDesktop && { sidebarAberta: true }),
+        });
+      },
 
       limparAtletas: (destino = 'festival') =>
         destino === 'festival'

@@ -6,6 +6,10 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
+### Fixed
+- **Menu lateral some no mobile (PWA instalado, retrato)**: o layout não tinha tratamento responsivo — em ~375px o conteúdo (título + tabelas) forçava scroll horizontal e a sidebar saía da tela (por isso "aparecia" na paisagem e sumia ao navegar). Agora: `<main>` com `min-w-0`, flex com `overflow-x-clip` (mata o scroll lateral); **em telas < 768px a sidebar vira drawer** (`fixed` + `translate-x`, backdrop que fecha ao toque, fecha ao navegar); TopBar ganhou **☰** (`md:hidden`) que abre o drawer; título com `truncate`; desktop ≥ 768px mantém o comportamento anterior intacto
+- **Link compartilhado no mobile não abre mais o drawer por cima do conteúdo**: `importarCompartilhado` força `sidebarAberta: true` só em desktop (`matchMedia`, fallback `true` sem `matchMedia` p/ jsdom) — no mobile o drawer começa fechado e o destinatário vê o conteúdo + toast
+
 ### Added
 - **PWA instalável com cache offline**: `vite-plugin-pwa` (Workbox) no `vite.config.ts` — manifest (`Festival Interno`, standalone, tema `#2563eb`), service worker com precache (54 entradas) e `navigateFallback` para a SPA; `registerType: 'autoUpdate'` (atualização silenciosa); ícones gerados em `public/` (`icon-192.png`, `icon-512.png`, `icon-maskable.png`, `apple-touch-icon.png`); `public/_headers` com `Cache-Control: no-cache` em `/sw.js` e `/manifest.webmanifest` (Cloudflare Pages); meta description + apple-touch-icon no `index.html`
 - **Zoom de acessibilidade (A− / A+) na TopBar**: níveis fixos 90% → 100% → 110% → 125% → 150% com clamp nas extremidades (botões desabilitados); aplicação via CSS `zoom` no `<html>` (escala px e rem); persistência por dispositivo em `localStorage` (`festival-zoom`) aplicada antes do render (anti-flash, junto ao tema); nova util `src/utils/zoom.ts` + 8 testes
