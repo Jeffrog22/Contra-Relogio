@@ -31,7 +31,7 @@ export default defineConfig({
         lang: 'pt-BR',
         start_url: '/',
         scope: '/',
-        display: 'standalone',
+        display: 'fullscreen',
         theme_color: '#2563eb',
         background_color: '#ffffff',
         icons: [

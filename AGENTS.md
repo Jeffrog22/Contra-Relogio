@@ -99,7 +99,7 @@ Regras:
 - **Export `.xlsx` + auto-sync do histórico**: `exportXlsx(nome, campos, linhas)` em `src/utils/xlsx.ts` (SheetJS `xlsx`, **import dinâmico** — chunk separado no build, só carrega no clique) espelha a assinatura de `exportCSV`; usada só na Balizamento (`balizamento.xlsx`) e Controle (`controle-resultados.xlsx`). **`atualizarTempoAtleta` faz upsert em `historico`** com `ano = new Date().getFullYear()` (hoje 2026) casando por `nomeChave()` (trim+lowercase) — mesmo aluno+ano **substitui**, senão append; **`tempo === undefined` não mexe** no histórico (não apaga linha vinda de CSV — o input limpa durante a digitação); escopo é só a base **Festival** (edição de tempo na Lista via `atualizarAtleta` **não** sincroniza). Na Análise, `anos` = anos do histórico **∪ ano atual** (chip e coluna 2026 sempre existem, células vazias com "—") e o label "edição(ões)" usa `anosComDados` (só anos com registros).
 - **Link compartilhado payload v2 + retrocompat v1**: `serializarEstado` grava `v: 2` — séries com atletas **por id** (`{atletaId, raia}`) e atletas **sem** `medalha`/`categoriaCalculada` (recalculados na importação: `calcularMedalha`, `categoriaPorIdade`); `desserializarCompartilhado` aceita `v: 1` (forma antiga embutida) e `v: 2`; referência a id ausente é descartada. `importarLinkNoBoot` em `main.tsx` tem `try/catch/finally` — o React **sempre** monta (o bug da "sidebar sumiu" era exceção no boot antes do `createRoot`); `importarCompartilhado` força `sidebarAberta: true`. Share: `navigator.share()` quando existe (mobile/WhatsApp), fallback copy.
 - **Zoom de acessibilidade**: `src/utils/zoom.ts` — `NIVEIS_ZOOM = [0.9, 1.0, 1.1, 1.25, 1.5]`, `zoomVizinho(atual, direcao)` com clamp, `aplicarZoom` seta `document.documentElement.style.zoom` (escala px+rem), persistido em `localStorage` **`festival-zoom`** (aplicado em `main.tsx` antes do render, anti-flash). Botões **A−/A+** na TopBar (`disabled` nas extremidades via `disabled:opacity-40 disabled:pointer-events-none` no Button ghost).
-- **PWA**: `vite-plugin-pwa` (Workbox) no `vite.config.ts` — `registerType: 'autoUpdate'`, `injectRegister: 'auto'` (sem import no main.tsx), manifest standalone/`#2563eb`, `navigateFallback: 'index.html'`, precache de `**/*.{js,css,html,ico,png,svg,webmanifest}`. Ícones PNG gerados via PowerShell `System.Drawing` em `public/` (192, 512, maskable, apple-touch 180). **`public/_headers`**: `Cache-Control: no-cache` em `/sw.js` e `/manifest.webmanifest` (Cloudflare Pages). Cuidado no PowerShell: **`$path` é variável automática** — nunca usá-la como nome de variável local (colide com parâmetro `-Path` e quebra `GraphicsPath`).
+- **PWA**: `vite-plugin-pwa` (Workbox) no `vite.config.ts` — `registerType: 'autoUpdate'`, `injectRegister: 'auto'` (sem import no main.tsx), manifest **`display: 'fullscreen'`**/`#2563eb` (era `standalone`; trocado em v2.1.3 para **esconder a status bar do Android** — o Chrome estável não estende a viewport do PWA por baixo das barras do sistema nem com `viewport-fit=cover`; contra: relógio/bateria não aparecem no app; iOS ignora fullscreen), `navigateFallback: 'index.html'`, precache de `**/*.{js,css,html,ico,png,svg,webmanifest}`. Ícones PNG gerados via PowerShell `System.Drawing` em `public/` (192, 512, maskable, apple-touch 180). **`public/_headers`**: `Cache-Control: no-cache` em `/sw.js`, `/manifest.webmanifest`, **`/`** e **`/index.html`** (Cloudflare Pages — evita HTML velho no PWA). Cuidado no PowerShell: **`$path` é variável automática** — nunca usá-la como nome de variável local (colide com parâmetro `-Path` e quebra `GraphicsPath`).
 - **Layout mobile = drawer**: causa raiz do "menu some no mobile" era **falta de responsividade** (flex fixo + sem `min-w-0` + TopBar sem truncate → scroll horizontal empurrava a sidebar para fora em retrato; paisagem >768px funcionava). Solução: `overflow-x-clip` no flex do `Layout` + `min-w-0` no main; **`< 768px` a sidebar é drawer** (`max-md:fixed` + `translate-x` off-screen quando fechada, backdrop `z-30 md:hidden`, fecha no `useEffect` de `location.pathname`); **☰** no TopBar (`md:hidden`) alterna o mesmo `sidebarAberta`; `≥ 768px` = w-56/w-14 estático como antes. `importarCompartilhado` só força `sidebarAberta: true` em desktop (`matchMedia('(min-width: 768px)')`; **fallback `true` sem `matchMedia`** preserva testes jsdom) — mobile abre o drawer fechado.
 - **Link compartilhado deflate + ids curtos (API assíncrona)**: `serializarEstado`/`montarLink`/`desserializarCompartilhado` viraram **`Promise`** — compressão com `CompressionStream('deflate-raw')` + base64url (nativa, ~74% menor que lz-string na mesma base) e **ids remapeados para `"0"`,`"1"`,…** no payload (UUIDs de 36 chars eram incompressíveis); desserialização **tenta deflate e cai para lz-string** (`interpretarJson` valida shape p/ cada tentativa — deflate pode "sucessar" com lixo em dados lz); `main.tsx` roda `importarLinkNoBoot().finally(createRoot)` (React sempre monta). **lz-string continua como dependência** (só de decompressão p/ links antigos).
 
@@ -1157,6 +1157,33 @@ pm run build OK
 ### Arquivos
 - src/components/ui/CronometroSerie.tsx
 - public/_headers
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 26/11/2026 — Fix: manifest fullscreen (some a status bar do PWA) (v2.1.3)
+
+### O que foi feito
+- **Diagnóstico com print** (`printcrono.jpeg` na raiz): faixa azul de ~0,5cm no topo do PWA instalado **ainda presente** após o v2.1.2 — a faixa é a **status bar do Android** (relógio 02:41, bateria 81%, ícones) pintada com o `theme-color`, **fora da viewport web**; verificação via `webfetch` do site publicado confirmou `viewport-fit=cover` + bundle `index-Akvqa29X.css` no ar (deploy ok) — ou seja, o Chrome estável **não estende a viewport do PWA standalone por baixo das barras do sistema** com `viewport-fit=cover` (comportamento atrás de flag/version-dependent). Nenhum CSS pinta por cima da status bar
+- **`vite.config.ts`**: manifest do PWA `display: 'standalone'` → **`display: 'fullscreen'`** — some a status bar **e** a barra de navegação inferior, e o modal encosta no topo físico da tela
+- Verificação: `npx tsc -b --force` 0 erros; **144 testes, 0 falhas**; `npm run build` OK (PWA 62 entradas) + sanity: `dist/manifest.webmanifest` com `"display":"fullscreen"`
+- Docs: CHANGELOG (Fixed), AGENTS.md (esta sessão)
+
+### Decisões
+- **Fullscreen é a única forma de remover a faixa** em Chrome estável (as alternativas avaliadas: `theme-color` na cor do fundo — só some o contraste, e aceitar — usuário escolheu fullscreen)
+- Contra aceito: **relógio/bateria não ficam visíveis** durante o uso (dá pra puxar a notificação); barra de navegação inferior também some (mais altura útil)
+- `theme_color`/`background_color` no manifest mantidos (splash de abertura continua azul da marca); `env(safe-area-inset-top)` no TopBar/modal segue útil p/ notch em fullscreen
+- iOS não suporta `display: fullscreen` em PWA (cai para standalone) — sem efeito colateral no iPhone
+- Pós-deploy: pode ser preciso **remover o ícone e reinstalar o PWA** se o Chrome não atualizar o display mode sozinho
+- Commit único `fix:` → patch (**v2.1.3**)
+
+### Arquivos
+- vite.config.ts
 - CHANGELOG.md
 - AGENTS.md
 
