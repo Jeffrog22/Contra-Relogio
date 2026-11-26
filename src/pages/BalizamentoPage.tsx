@@ -55,7 +55,7 @@ function LinhaSorteavel({ linha, celulas, classe }: LinhaSorteavelProps) {
     <tr
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`${classe} cursor-grab active:cursor-grabbing${
+      className={`${classe} cursor-grab active:cursor-grabbing touch-none${
         isDragging ? ' opacity-60 relative z-10' : ''
       }`}
       {...attributes}

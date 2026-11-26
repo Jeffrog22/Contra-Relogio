@@ -91,6 +91,7 @@ Regras:
 - **Repo usa o kit de documentação**: hook `.githooks/post-commit` cria tags SemVer; sessões registradas via `scripts/nova-sessao.ps1`; nunca criar SESSION.md.
 - **Adição manual de atleta**: `adicionarAtleta(dados)` no store retorna `boolean` (`false` = categoria inválida ou nome duplicado case-insensitive — toast emitido pelo próprio store); monta o `Atleta` completo (`gerarId`, `categoriaPorIdade`, `calcularMedalha`) e re-executa `balizar()` **só se já existirem séries** (mesmo descarte de ajustes manuais dos filtros). `Modal` (DS) teve o primeiro uso real aqui.
 - **Cronômetro da Controle (reescrito)**: estado **local do hook** `useCronometro` (não na store) — `pendentes` (chegadas em sequência ordinal) + `atribuicoes` (ordem→atletaId); **clique curto no Parar** captura o tempo atual (1 clique = 1 chegada, até a série toda → para sozinho + toast "Todas as chegadas capturadas!"); **segurar Parar 3s zera** tempo e pendentes (botões com `user-select:none`, contextmenu bloqueado e `touch-callout:none`); **auto-atribuição do último chip**: com exatamente 1 chip livre e 1 pendente sem chip, atribui sozinho (2+ chips espera o arraste; devolver chip à zona `chips-livre` desatribui); **Registrar** grava via `atualizarTempoAtleta(id, Number((ms/1000).toFixed(2)))` e fecha o modal. Modal **não arrasta** (fixo centralizado rente ao topo); quem arrasta são os **botões Iniciar/Parar** (pointer events + limiar 6px, posição em `localStorage` `festival-crono-btns`); chips de raia usam `@dnd-kit` (droppable = célula Baliza `pend-{ordem}` e zona `chips-livre`).
+- **Drag & drop em touch**: todo elemento **arrastável** do `@dnd-kit` (`useDraggable`/`useSortable`) precisa da classe **`touch-none`** (`touch-action: none`) — sem ela o Chrome mobile rola a página e dispara `pointercancel` antes do `PointerSensor` ativar (desktop nunca é afetado). Padrão já usado nos botões Iniciar/Parar, chips (`ChipRaia`) e linhas da edição (`LinhaSorteavel`); droppables não precisam.
 - **Snapshot por filtro + flag de edição**: store tem `seriesPorFiltro: Record<string, Serie[]>` (chave `chaveFiltro(periodo, genero)` = `` `${periodo}|${genero}` ``) e `edicoesManuais: boolean` (ambos no `partialize` de `festival-storage`, com `merge` custom que default `{} / false` para localStorage antigo). `setPeriodo`/`setGeneroBalizamento` **salvam as séries atuais na chave atual e restauram a do destino** (na falta, `balizar()`); o snapshot do destino é apagado ao restaurar (invariante: a chave atual nunca fica no mapa) e clicar no chip já ativo é **no-op**. `edicoesManuais` sobe em `removerAtletaDaSerie`/`reordenarSeries` e só desce em `limparAtletas('festival')`, `processarAtletas` sem edições e `importarCompartilhado` (que liga `true` se o link traz séries); `executarBalizamento` (Atualizar) regenera sob demanda e **não** mexe na flag. `atualizarAtleta` sincroniza as cópias também nos snapshots.
 - **Upload com edições preserva por nome**: `preservarSeries()` (helper da store) roda em `processarAtletas` (só com `edicoesManuais`) e em `adicionarAtleta` — `remapearPorNome` casa por `nomeChave()` = `nome.trim().toLowerCase()` (**os ids mudam a cada `gerarId()`**, por isso é por nome) e `inserirAusentes` insere **apenas quem é realmente novo** (nome ausente da base anterior — exclusões manuais **não voltam**); regra de encaixe: mesma `categoriaOficial+nivel+genero` com <4 → mesma série; senão mesmo `genero` com <4 → anexa; senão cria série (`numero = max+1`); snapshots por filtro atualizados com o filtro de cada um. Helpers puros em `src/utils/edicaoSeries.ts`.
 - **Drag com teto de 4 → troca**: `moverAtleta(series, atletaId, de, para, alvoId?)` em `edicaoSeries.ts` — série destino **<4** → move normalmente (filtra séries vazias); série destino **=4 com `alvoId`** → **troca** os dois (cada um assume a posição do outro, tamanhos preservados — as duas seguem cheias se ambas tinham 4); destino =4 **sem `alvoId`** → `null` (sem alvo não há com quem trocar). A página não bloqueia mais o drag: em troca mostra toast `X trocado com Y (série N).` Série com 5+ faria `reatribuirRaias` repetir raia 1 (`raias[i] ?? 1`). `removerAtletaDaSerie` filtra vazias. Raias de série ≤4 são sempre únicas (`raiasDaSerie`: 4→[1,2,3,4], 3→[2,3,4], 2→[1,2], 1→[1]).
@@ -1184,6 +1185,34 @@ pm run build OK
 
 ### Arquivos
 - vite.config.ts
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros
+
+---
+
+## Sessão: 26/11/2026 — Fix: drag & drop dos chips/linhas não funcionava no toque (mobile)
+
+### O que foi feito
+- **Diagnóstico** (relato: "drag and drop dos chips de alunos não funcionou no mobile", logo após o fullscreen confirmado): `ChipRaia` (modal do cronômetro) e `LinhaSorteavel` (linhas da edição do balizamento) estavam **sem `touch-none`** — no Chrome mobile, sem `touch-action: none` o navegador reivindica o gesto para **rolar** e dispara `pointercancel` antes de o `PointerSensor` (`distance: 8`) ativar; o drag nunca começa. Prova: os botões ▶ Iniciar/■ Parar já tinham `touch-none` e arrastavam normalmente; desktop (mouse) nunca foi afetado
+- **`CronometroSerie.tsx`**: `touch-none` adicionado à classe do `ChipRaia`
+- **`BalizamentoPage.tsx`**: `touch-none` adicionado à `<tr>` do `LinhaSorteavel` (mesmo defeito latente; a linha só é renderizada no modo edição, então a rolagem por toque só perde o gesto quando o usuário está editando — exatamente a hora de arrastar)
+- Verificação: `npx tsc -b --force` 0 erros; **144 testes, 0 falhas**; `npm run build` OK + sanity: string `cursor-grab active:cursor-grabbing touch-none` no bundle atual (`index-Dqjrts9b.js`) e `.touch-none{touch-action:none}` no CSS
+- Docs: CHANGELOG (Fixed), AGENTS.md (esta sessão)
+
+### Decisões
+- **`touch-none` no elemento arrastável** é a regra do dnd-kit em touch (`touch-action: none` no `useDraggable`/`useSortable`); sem CSS extra nem dependência nova
+- Trade-off aceito: toque iniciado num chip não rola a página (chips ficam no header fixo do modal — sem perda); no balizamento, só no modo edição
+- Limiar `distance: 8` mantido (funciona igual no toque)
+- **Nota de ambiente**: o `dist/` local **acumula builds antigos** (15 CSS de 10/10 a hoje; `emptyOutFile` não limpa) — inofensivo para o deploy (Cloudflare Pages builda em clone limpo), mas o precache local contém entradas órfãs; não confiar no hash do bundle local sem checar o `LastWriteTime`
+- Commit único `fix:` → patch (**v2.1.4**)
+
+### Arquivos
+- src/components/ui/CronometroSerie.tsx
+- src/pages/BalizamentoPage.tsx
 - CHANGELOG.md
 - AGENTS.md
 

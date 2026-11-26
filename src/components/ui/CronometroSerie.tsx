@@ -64,7 +64,7 @@ function ChipRaia({ atletaId, raia, nome }: ChipProps) {
       {...listeners}
       {...attributes}
       title={nome}
-      className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full border cursor-grab active:cursor-grabbing transition-opacity ${
+      className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full border cursor-grab active:cursor-grabbing touch-none transition-opacity ${
         isDragging ? 'opacity-40' : ''
       } bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300`}
     >
