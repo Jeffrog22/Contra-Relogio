@@ -1219,3 +1219,29 @@ pm run build OK
 ### Typecheck
 - Frontend: 0 erros
 - Backend: 0 erros
+
+---
+
+## Sessão: 26/11/2026 — Fix: arrasto da edição do balizamento bloqueado no mobile (seleção/copiar/traduzir)
+
+### O que foi feito
+- **Diagnóstico** (relato: "arrasto não funciona no mobile, conflito com seleção/copiar/traduzir do navegador"; desktop normal): `LinhaSorteavel` já tinha `touch-none` (`touch-action: none`), mas **o texto seguia selecionável** — no Chrome mobile arrastar sobre texto iniciava **seleção + toolbar flutuante** (copiar/traduzir), disparando `pointercancel` que matava o `PointerSensor` do dnd-kit; desktop (mouse) nunca tem esse comportamento
+- **`src/pages/BalizamentoPage.tsx`**:
+  - `<tr>` de `LinhaSorteavel`: + `select-none` (bloqueia seleção → bloqueia a toolbar), + `[-webkit-touch-callout:none]` (callout de long-press no iOS), + `onDragStart={(e) => e.preventDefault()}` (drag nativo) e `onContextMenu={(e) => e.preventDefault()}` (menu de long-press no Android)
+  - `TabelaGenerica` ganhou `className={modoEdicao ? 'select-none [-webkit-touch-callout:none]' : ''}` — cobre a tabela inteira **só no modo edição**; fora dele a seleção de texto segue liberada (copiar nomes)
+- Verificação: `npx tsc -b --force` 0 erros; **144 testes, 0 falhas**; `npm run build` OK + sanity no bundle: `.select-none{...user-select...}` e `[-webkit-touch-callout:none]` presentes no CSS
+- Docs: CHANGELOG (Fixed), AGENTS.md (esta sessão)
+
+### Decisões
+- Guards de evento (`onDragStart`/`onContextMenu` preventDefault) junto com o CSS — defesa em profundidade sem mudar o sensor/limiar do dnd-kit
+- Proteção da tabela inteira condicionada a `modoEdicao` para não afetar o modo normal (seleção/cópia de nomes)
+- Mesmo padrão já usado no modal do cronômetro (`select-none` em `CronometroSerie.tsx`)
+
+### Arquivos
+- src/pages/BalizamentoPage.tsx
+- CHANGELOG.md
+- AGENTS.md
+
+### Typecheck
+- Frontend: 0 erros
+- Backend: 0 erros

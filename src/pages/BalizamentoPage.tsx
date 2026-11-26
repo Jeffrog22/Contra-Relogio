@@ -55,9 +55,11 @@ function LinhaSorteavel({ linha, celulas, classe }: LinhaSorteavelProps) {
     <tr
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`${classe} cursor-grab active:cursor-grabbing touch-none${
+      className={`${classe} cursor-grab active:cursor-grabbing touch-none select-none [-webkit-touch-callout:none]${
         isDragging ? ' opacity-60 relative z-10' : ''
       }`}
+      onDragStart={(e) => e.preventDefault()}
+      onContextMenu={(e) => e.preventDefault()}
       {...attributes}
       {...listeners}
     >
@@ -223,6 +225,7 @@ export function BalizamentoPage() {
       colunas={colunas}
       itens={linhas}
       chaveItem={(linha) => linha.id}
+      className={modoEdicao ? 'select-none [-webkit-touch-callout:none]' : ''}
       classeLinha={(linha) => classeLinhaSerie(linha.indiceSerie, linha.primeira)}
       renderLinha={
         modoEdicao
